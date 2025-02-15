@@ -49,6 +49,20 @@
   font-size: 0.9rem;
 }
 
+// Header title
+.app-header-title {
+  a {
+    font-size: 1.6rem;  // Smaller than default 2em
+    font-weight: 500;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    
+    &:hover {
+      color: #fff;
+    }
+  }
+}
+
 // Header social icons
 .app-header-social {
   margin-top: 2rem;
