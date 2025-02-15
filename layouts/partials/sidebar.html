@@ -1,0 +1,43 @@
+<header class="app-header">
+  <!-- Author Avatar -->
+  {{ with .Site.Params.avatar }}
+    <a href="{{ "/" | relURL }}">
+      <img src="{{ . | relURL }}" class="app-header-avatar" alt="{{ $.Site.Params.author }}" />
+    </a>
+  {{ end }}
+
+  <!-- Site Title -->
+  <div class="app-header-title">
+    <a href="{{ "/" | relURL }}">
+      {{ .Site.Title }}
+    </a>
+  </div>
+
+  <!-- Description -->
+  <p class="app-header-description">
+    {{ .Site.Params.description }}
+  </p>
+
+  <!-- Navigation Menu -->
+  {{ with .Site.Menus.main }}
+    <nav class="app-header-menu">
+      {{- range $key, $item := . }}
+        {{- if ne $key 0 }}
+          {{ $.Site.Params.menu_item_separator | default " - " | safeHTML }}
+        {{ end }}
+        <a class="app-header-menu-item" href="{{ $item.URL }}">{{ $item.Name }}</a>
+      {{- end }}
+    </nav>
+  {{ end }}
+
+  <!-- Social Icons -->
+  {{ with .Site.Params.social }}
+    <div class="app-header-social">
+      {{ range . }}
+        <a href="{{ .url }}" target="_blank" rel="noreferrer noopener me">
+          {{ partial "icon.html" (dict "ctx" $ "name" .icon "title" .name) }}
+        </a>
+      {{ end }}
+    </div>
+  {{ end }}
+</header>

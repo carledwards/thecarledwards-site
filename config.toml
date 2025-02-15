@@ -1,5 +1,5 @@
 baseURL = "https://thecarledwards.com"
-title = "The Carl Edwards Blog"
+title = "The Carl Edwards"
 theme = "hugo-theme-m10c"
 
 [menu]
@@ -21,6 +21,28 @@ theme = "hugo-theme-m10c"
 
 [params]
   author = "Carl Edwards"
-  description = "The Good Stuff starts here"
+  description = "The Good Stuff starts Here"
   menu_item_separator = " - "
   avatar = "/images/avatar.jpg"
+  # Theme colors
+  [params.style]
+    darkestColor = "#1a1e23"    # Darker background for better contrast
+    darkColor = "#2d333b"       # Slightly darker secondary background
+    lightColor = "#e6edf3"      # Much brighter text for better readability
+    lightestColor = "#ffffff"
+    primaryColor = "#57707d"    # Keeping the muted blue-gray
+
+  [[params.social]]
+    icon = "brand-github"
+    name = "GitHub"
+    url = "https://github.com/carledwards"
+
+  [[params.social]]
+    icon = "brand-twitter"
+    name = "Twitter"
+    url = "https://twitter.com/the_CarlEdwards"
+
+  [[params.social]]
+    icon = "brand-linkedin"
+    name = "LinkedIn"
+    url = "https://linkedin.com/in/the-carl-edwards"
