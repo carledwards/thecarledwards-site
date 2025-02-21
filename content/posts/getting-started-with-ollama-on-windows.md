@@ -63,14 +63,23 @@ curl http://localhost:11434/api/tags
 
 ## Enabling Network Access
 
-To allow other devices on your network to access your Ollama instance, you'll need to:
+If you want to access the LLM from a remote machine on your local network, you have a couple of options:
 
-1. Download and install ncat from the [Nmap website](https://nmap.org/download.html)
-2. Run the following command to expose Ollama to your local network:
+### Option 1: Setting Environment Variables
 
-```bash
-ncat -lk 0.0.0.0 11434 --sh-exec "ncat 127.0.0.1 11434"
-```
+On Windows, Ollama can use your system environment variables to allow network access:
+
+- Quit Ollama from the taskbar.
+- Open Settings (Windows 11) or Control Panel (Windows 10) and search for environment variables.
+- Edit or create a new variable for `OLLAMA_HOST` and set it to `0.0.0.0:11434`.
+- Restart Ollama from the Start menu.
+
+### Option 2: Using ncat
+
+Alternatively, you can use ncat to expose Ollama:
+
+- Download ncat from the [Nmap website](https://nmap.org/download.html).
+- Use the command `ncat -lk 0.0.0.0 11434 --sh-exec "ncat 127.0.0.1 11434"` to allow network access.
 
 ## Testing Remote Access
 
