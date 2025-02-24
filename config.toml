@@ -21,16 +21,16 @@ theme = "hugo-theme-m10c"
 
 [params]
   author = "Carl Edwards"
-  description = "The Good Stuff starts Here"
+  description = "Try → Iterate → Reflect → Learn → Apply → Have Fun!"
   menu_item_separator = " - "
   avatar = "/images/avatar.jpg"
   # Theme colors
   [params.style]
-    darkestColor = "#1a1e23"    # Darker background for better contrast
-    darkColor = "#2d333b"       # Slightly darker secondary background
-    lightColor = "#e6edf3"      # Much brighter text for better readability
-    lightestColor = "#ffffff"
-    primaryColor = "#57707d"    # Keeping the muted blue-gray
+    darkestColor = "#1a2634" # left gutter background color
+    darkColor = "#2c3e50" # main content background color
+    primaryColor = "#77909d"
+    lightColor = "#d6e5f2"
+    lightestColor = "#e0da16"
 
   [[params.social]]
     icon = "brand-github"
