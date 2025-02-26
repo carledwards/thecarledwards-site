@@ -19,11 +19,11 @@ How about a drone that launches from your car to give you a bird's-eye view when
 
 ## 3. Dashboard Mounted Waze Buttons
 
-A control panel in your car or on your motorcycle/car to alert you of dangers ahead, with easy buttons to report issues or give a thumbs-up. Simple, yet effective. I would purchase a subscription to have these features.
+A control panel in your car (or on your motorcycle) to alert you of dangers ahead, with easy buttons to report issues or give a thumbs-up. Simple, yet effective. I would purchase a subscription to have these features.
 
 ## 4. Hands-Free Horn
 
-Back in the 60's and 70's cars had a foot switch for the high beams. Let's bring that back for the horn. It keeps your hands on the wheel and could save your wrists from airbags if you are in an accident.
+Back in the 60's and 70's cars had a foot switch for the high beams. Let's bring that back for the horn. It keeps your hands on the wheel and could save your wrists from airbags if you are in an accident. Here is my first [foot horn prototype](https://github.com/carledwards/foot-horn) in my truck.
 
 ## 5. Voice-Activated Horn
 
@@ -35,5 +35,4 @@ Why carry a separate Garmin Zumo XT when your iPhone can do it all? A seamless G
 
 ## 7. The Real Unlock of xAI/Grok: Understanding (My Wife's) Universe
 
-Elon talks about using xAI and Grok to understand the universe. But what if it could understand my wife? Imagine a live feed that tells me her mood or whether it's a good time to ask for something.
-
+Elon talks about using xAI and Grok to understand the universe. But what if it could understand my wife? Imagine a up-to-date status that tells me her mood to ask about about going for a long motorcycle ride or buying something.
