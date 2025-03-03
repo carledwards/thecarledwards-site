@@ -1,5 +1,5 @@
 ---
-title: "Skip the spat, just grab the DefeCat"
+title: "Skip the spat, just grab DefeCat"
 date: 2025-03-03
 description: "A humorous look at a revolutionary cat litter product that solves the age-old problem of getting men to remember to buy cat litter."
 tags: ["Humor", "Marketing", "Product", "Cats"]
