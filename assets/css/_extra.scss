@@ -1,15 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&display=swap');
+
+body {
+  font-family: 'Inconsolata', monospace;
+}
+
+.post-content h3,
+.post-content h4,
+.post-content h5 {
+  color: #fff; /* Set h3, h4, h5 color to white */
+}
+
+.post-title {
+  color: #4c92f5; /* Adding a blue accent */
+  font-size: 2rem; /* Increasing font size */
+}
+
+.post-content h2 {
+  color: #fff; /* Set h2 color to white */
+}
+
 // Post content
 .post-content {
   p {
     margin: 1em 0;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     line-height: 1.6;
   }
   a {
     color: #4c92f5;
   }
   a:hover {
-    color: #e0da16;
+    color: #fff;
   }
 }
 
@@ -22,13 +43,21 @@
   letter-spacing: 0.01em;
 }
 
+.project-content {
+  text-align: center;
+}
+
+.article-content {
+  text-align: left;
+}
+
 // Post list styles
 .posts-list-item {
   margin-bottom: 2.5rem;
 }
 
 .posts-list-item-title {
-  color: #e0da16;
+  color: #fff;
   font-size: 1.5rem;
   font-weight: 500;
   letter-spacing: 0.01em;
