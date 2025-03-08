@@ -23,9 +23,10 @@ Another approach is the Matter protocol, which is gaining traction for home auto
 ## Alternative DIY Methods
 
 Since these solutions are unavailable to hobbyists, here are some workarounds:
-	1.	QR Code Scanning
-If the device has a camera, it can scan a QR code containing the WiFi SSID and password. This is usually done through a custom mobile app: you enter your credentials, generate a QR code, and display it for the device to scan. If it fails to connect, the device might blink an LED or emit a sound to indicate an error.
-	2.	Bluetooth Credential Transfer
+
+1. **QR Code Scanning**: If the device has a camera, it can scan a QR code containing the WiFi SSID and password. This is usually done through a custom mobile app: you enter your credentials, generate a QR code, and display it for the device to scan. If it fails to connect, the device might blink an LED or emit a sound to indicate an error.
+
+2. **Bluetooth Credential Transfer**: 
 A more robust method is using Bluetooth. A custom mobile app can send the WiFi credentials over Bluetooth, allowing the device to connect without requiring manual input. This approach is more seamless and avoids potential security risks associated with QR code scanning.
 
 ## The Password Problem
@@ -45,9 +46,10 @@ I wish iOS and Android would open up these WiFi-sharing protocols to DIYers. It 
 ## A Better Way to Share WiFi Credentials
 
 Here are a few ideas that could improve WiFi sharing, especially for setting up devices for others:
-	•	Allow users to share WiFi credentials by generating a temporary pass with an expiration time.
-	•	Restrict shared credentials so they cannot be forwarded to others.
-	•	Never expose the master WiFi password to third-party devices (e.g., smart switches, thermostats, cameras). Instead, create a sandboxed network where their traffic can be monitored and controlled.
+
+* Allow users to share WiFi credentials by generating a temporary pass with an expiration time.
+* Restrict shared credentials so they cannot be forwarded to others.
+* Never expose the master WiFi password to third-party devices (e.g., smart switches, thermostats, cameras). Instead, create a sandboxed network where their traffic can be monitored and controlled.
 
 For now, my preferred solution is using a custom app with Bluetooth-based credential transfer. It’s the easiest and most secure option available to me.
 
