@@ -5,8 +5,6 @@ description: "Thoughts on how technology can make a real difference in everyday 
 tags: ["Technology", "Innovation", "EverydayTech"]
 ---
 
-# Carl's Tech Tenets
-
 I believe in building technology where it can make a real difference in our daily lives: where the rubber meets the road for our everyday experiences. Here are some of my thoughts that would make a difference in my life:
 
 ## 1. Self-Driving Cars

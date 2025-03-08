@@ -4,19 +4,16 @@ body {
   font-family: 'Inconsolata', monospace;
 }
 
-.post-content h3,
-.post-content h4,
-.post-content h5 {
-  color: #fff; /* Set h3, h4, h5 color to white */
-}
-
 .post-title {
   color: #4c92f5; /* Adding a blue accent */
   font-size: 2rem; /* Increasing font size */
 }
 
-.post-content h2 {
-  color: #fff; /* Set h2 color to white */
+.post-content h2,
+.post-content h3,
+.post-content h4,
+.post-content h5 {
+  color: #fff; /* Set h2, h3, h4, h5 color to white */
 }
 
 // Post content
