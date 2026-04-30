@@ -1,0 +1,24 @@
+---
+const year = new Date().getFullYear();
+const links = [
+  { href: 'https://github.com/carledwards', label: 'GitHub' },
+  { href: 'https://linkedin.com/in/the-carl-edwards', label: 'LinkedIn' },
+  { href: 'https://twitter.com/the_CarlEdwards', label: 'Twitter' },
+  { href: '/rss.xml', label: 'RSS' },
+];
+---
+
+<footer class="mt-24 border-t border-ink-800/80">
+  <div class="container-wide flex flex-col gap-4 py-10 text-sm text-ink-400 sm:flex-row sm:items-center sm:justify-between">
+    <div class="font-mono">
+      &copy; {year} Carl Edwards
+    </div>
+    <nav class="flex flex-wrap gap-x-5 gap-y-2">
+      {links.map((l) => (
+        <a href={l.href} class="hover:text-accent" rel={l.href.startsWith('http') ? 'noopener me' : undefined}>
+          {l.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</footer>

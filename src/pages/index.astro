@@ -1,0 +1,135 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 4);
+
+const focus = [
+  {
+    label: 'Engineering Leadership',
+    body: 'Building and growing teams that ship — pragmatic process, clear ownership, and shared technical taste. From founding engineer to CTO.',
+  },
+  {
+    label: 'Systems & Architecture',
+    body: 'Distributed systems, data platforms, and developer tooling. Long-arc thinking on what to keep simple and where complexity actually pays.',
+  },
+  {
+    label: 'AI-Native Workflows',
+    body: 'Putting LLMs into the inner loop of how teams plan, build, and operate. Practical tooling — not demos. See recent posts on Claude Code, planning, and observability.',
+  },
+];
+
+const work = [
+  {
+    title: 'Asciimator',
+    blurb: 'Browser-based ASCII animation tool. A weekend side quest that grew into a real tool.',
+    href: 'https://github.com/carledwards',
+    meta: 'side project · 2026',
+  },
+  {
+    title: 'LCM-32',
+    blurb: 'Co-designed an affordable 6502-based single-board computer in 1986 with Matt Gilliland.',
+    href: 'https://github.com/carledwards/lcm-32',
+    meta: 'hardware · 1986',
+  },
+  {
+    title: 'Claude Code Mac Status Bar',
+    blurb: 'Menu-bar indicator for Claude Code state — idle, working, attention. SwiftBar + hooks.',
+    href: '/blog/claude-code-mac-status-bar/',
+    meta: 'tool · 2026',
+  },
+];
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<BaseLayout title="Carl Edwards">
+  <section class="relative overflow-hidden border-b border-ink-800/80">
+    <div class="absolute inset-0 grid-bg opacity-60"></div>
+    <div class="container-wide relative py-24 sm:py-32">
+      <div class="max-w-3xl">
+        <div class="text-mono-tag mb-6 flex items-center gap-3">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-accent"></span>
+          <span>engineering leader · architect · cto</span>
+        </div>
+        <h1 class="text-4xl sm:text-6xl font-semibold text-ink-100 leading-[1.05] tracking-tight">
+          I build software,
+          <span class="text-accent">teams</span>, and the
+          <span class="text-accent">tools</span> that let both ship faster.
+        </h1>
+        <p class="mt-8 text-lg sm:text-xl text-ink-300 leading-relaxed max-w-2xl">
+          Hi, I'm Carl. Forty years in: from 6502 assembly on a Commodore 64 to leading
+          engineering orgs and shipping AI-native developer tooling. I write here about the
+          craft, the systems, and what holds up under pressure.
+        </p>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <a href="/blog/" class="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-accent-dim">
+            Read the writing
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="/about/" class="inline-flex items-center gap-2 rounded-md border border-ink-700 px-4 py-2.5 text-sm font-semibold text-ink-100 hover:border-ink-500 hover:bg-ink-800/40">
+            About me
+          </a>
+          <a href="https://linkedin.com/in/the-carl-edwards" class="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-ink-300 hover:text-accent">
+            LinkedIn
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-wide py-20">
+    <div class="text-mono-tag mb-10">// what I work on</div>
+    <div class="grid gap-px bg-ink-800 sm:grid-cols-3 rounded-lg overflow-hidden border border-ink-800">
+      {focus.map((f) => (
+        <div class="bg-ink-900 p-6 sm:p-8 hover:bg-ink-800/70 transition-colors">
+          <div class="text-ink-100 font-semibold tracking-tight">{f.label}</div>
+          <p class="mt-3 text-sm text-ink-300 leading-relaxed">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="container-wide py-20 border-t border-ink-800/80">
+    <div class="flex items-baseline justify-between mb-10">
+      <div class="text-mono-tag">// selected work</div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      {work.map((w) => (
+        <a href={w.href} class="group block rounded-lg border border-ink-800 bg-ink-900 p-6 hover:border-ink-600 hover:bg-ink-800/60">
+          <div class="font-mono text-xs uppercase tracking-wider text-ink-400">{w.meta}</div>
+          <div class="mt-3 text-lg font-semibold text-ink-100 group-hover:text-accent">{w.title}</div>
+          <p class="mt-2 text-sm text-ink-300 leading-relaxed">{w.blurb}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="container-wide py-20 border-t border-ink-800/80">
+    <div class="flex items-baseline justify-between mb-10">
+      <div class="text-mono-tag">// recent writing</div>
+      <a href="/blog/" class="text-sm text-ink-400 hover:text-accent">all posts →</a>
+    </div>
+    <ul class="divide-y divide-ink-800 border-y border-ink-800">
+      {posts.map((p) => (
+        <li>
+          <a href={`/blog/${p.slug}/`} class="group flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:gap-6">
+            <time class="font-mono text-xs uppercase tracking-wider text-ink-500 sm:w-32 shrink-0" datetime={p.data.date.toISOString()}>
+              {fmt(p.data.date)}
+            </time>
+            <div class="min-w-0 flex-1">
+              <div class="text-ink-100 font-medium group-hover:text-accent">{p.data.title}</div>
+              {p.data.description && (
+                <p class="mt-1 text-sm text-ink-400 line-clamp-2">{p.data.description}</p>
+              )}
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>

@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-ink-950 text-ink-200 antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  body {
+    @apply min-h-screen flex flex-col;
+  }
+
+  ::selection {
+    @apply bg-accent/30 text-ink-100;
+  }
+
+  a {
+    @apply transition-colors duration-150;
+  }
+
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .container-prose {
+    @apply mx-auto w-full max-w-3xl px-6;
+  }
+
+  .container-wide {
+    @apply mx-auto w-full max-w-5xl px-6;
+  }
+
+  .grid-bg {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(126, 231, 135, 0.06) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+
+  .text-mono-tag {
+    @apply font-mono text-xs uppercase tracking-[0.18em] text-ink-400;
+  }
+}
