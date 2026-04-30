@@ -1,0 +1,5 @@
+/posts/:slug/  /blog/:slug/  301
+/posts/:slug   /blog/:slug/  301
+/posts/        /blog/        301
+/posts         /blog/        301
+/index.xml     /rss.xml      301

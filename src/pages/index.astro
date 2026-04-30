@@ -1,0 +1,193 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 4);
+
+const focus = [
+  {
+    label: 'Customer-Centered Engineering',
+    body: 'Starting from the user experience, then choosing the right technology, process, and implementation to make the complexity disappear.',
+  },
+  {
+    label: 'Technical Architecture',
+    body: 'Designing durable systems, internal platforms, and data flows with a bias toward simple operations and choices that age well.',
+  },
+  {
+    label: 'AI-Native Delivery',
+    body: 'Bringing LLMs into planning, development, and operations through practical tooling, measured workflows, and working code.',
+  },
+];
+
+const work = [
+  {
+    title: 'Asciimator',
+    blurb: 'Browser-based ASCII animation editor built around fast iteration, direct manipulation, and shareable output.',
+    href: 'https://asciimator.com',
+    meta: 'developer tool · 2026',
+  },
+  {
+    title: '6502 Sim TUI',
+    blurb: 'Terminal UI for exploring 6502 simulation state, inspired by FoxPro-era DOS interfaces and hands-on debugging workflows.',
+    href: 'https://github.com/carledwards/6502-sim-tui',
+    meta: 'simulator · 2026',
+  },
+  {
+    title: 'Claude Usage TRMNL',
+    blurb: 'E-ink dashboard for Claude Code usage limits, using a small local script and a TRMNL private plugin.',
+    href: '/blog/claude-usage-trmnl/',
+    meta: 'AI workflow · 2026',
+  },
+];
+
+const profile = [
+  {
+    label: 'Role',
+    value: 'CTO, architect, and hands-on software builder',
+  },
+  {
+    label: 'Current focus',
+    value: 'Customer-centered systems, AI-enabled workflows, and developer tools',
+  },
+  {
+    label: 'Background',
+    value: 'Self-taught, hands-on path from BASIC and 6502 assembly to engineering leadership',
+  },
+];
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+---
+
+<BaseLayout
+  title="Carl Edwards"
+  description="Carl Edwards is a CTO, architect, and hands-on software builder writing about customer-centered systems, engineering leadership, AI workflows, and developer tools."
+>
+  <section class="relative overflow-hidden border-b border-ink-800/80">
+    <div class="absolute inset-0 grid-bg opacity-60"></div>
+    <div class="container-wide relative grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+      <div class="max-w-3xl">
+        <div class="text-mono-tag mb-6 flex items-center gap-3">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-accent"></span>
+          <span>CTO · architect · hands-on builder</span>
+        </div>
+        <h1 class="text-4xl sm:text-6xl font-semibold text-ink-100 leading-[1.05] tracking-tight">
+          I lead engineering teams and build the
+          <span class="text-accent">tools, systems, and workflows</span>
+          that help them ship durable software.
+        </h1>
+        <p class="mt-8 text-lg sm:text-xl text-ink-300 leading-relaxed max-w-2xl">
+          I'm Carl Edwards. I love delighting users: gather their ideas, build
+          something quickly for us to react to, then learn and iterate.
+        </p>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <a href="/blog/" class="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-accent-dim">
+            Read the writing
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="/about/" class="inline-flex items-center gap-2 rounded-md border border-ink-700 px-4 py-2.5 text-sm font-semibold text-ink-100 hover:border-ink-500 hover:bg-ink-800/40">
+            About me
+          </a>
+          <a href="https://linkedin.com/in/the-carl-edwards" class="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-ink-300 hover:text-accent">
+            LinkedIn
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+
+      <aside class="border-t border-ink-800 pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+        <img
+          src="/images/avatar.jpg"
+          alt="Carl Edwards"
+          class="h-28 w-28 rounded-full border border-ink-700 object-cover"
+          loading="eager"
+        />
+        <dl class="mt-8 space-y-6">
+          {profile.map((item) => (
+            <div>
+              <dt class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500">
+                {item.label}
+              </dt>
+              <dd class="mt-2 text-sm leading-relaxed text-ink-200">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+  <section class="container-wide py-20">
+    <div class="max-w-2xl">
+      <div class="text-mono-tag mb-4">Practice</div>
+      <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+        Customer experience first. Technology in service of the problem.
+      </h2>
+      <p class="mt-4 text-ink-300 leading-relaxed">
+        I tend to sit where customer needs, architecture, and team execution meet:
+        translating feedback into systems, bridging technology gaps, and helping teams
+        ship solutions users do not have to think about.
+      </p>
+    </div>
+    <div class="mt-10 grid gap-px bg-ink-800 sm:grid-cols-3 rounded-lg overflow-hidden border border-ink-800">
+      {focus.map((f) => (
+        <div class="bg-ink-900 p-6 sm:p-8 hover:bg-ink-800/70 transition-colors">
+          <div class="text-ink-100 font-semibold tracking-tight">{f.label}</div>
+          <p class="mt-3 text-sm text-ink-300 leading-relaxed">{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="container-wide py-20 border-t border-ink-800/80">
+    <div class="flex items-baseline justify-between mb-10">
+      <div>
+        <div class="text-mono-tag mb-4">Selected Work</div>
+        <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+          Developer tools, systems, and hardware foundations.
+        </h2>
+      </div>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      {work.map((w) => (
+        <a href={w.href} class="group block rounded-lg border border-ink-800 bg-ink-900 p-6 hover:border-ink-600 hover:bg-ink-800/60">
+          <div class="font-mono text-xs uppercase tracking-wider text-ink-400">{w.meta}</div>
+          <div class="mt-3 text-lg font-semibold text-ink-100 group-hover:text-accent">{w.title}</div>
+          <p class="mt-2 text-sm text-ink-300 leading-relaxed">{w.blurb}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="container-wide py-20 border-t border-ink-800/80">
+    <div class="flex items-baseline justify-between mb-10">
+      <div>
+        <div class="text-mono-tag mb-4">Recent Writing</div>
+        <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+          Notes from building and leading.
+        </h2>
+      </div>
+      <a href="/blog/" class="text-sm text-ink-400 hover:text-accent">all posts →</a>
+    </div>
+    <ul class="divide-y divide-ink-800 border-y border-ink-800">
+      {posts.map((p) => (
+        <li>
+          <a href={`/blog/${p.slug}/`} class="group flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:gap-6">
+            <time class="font-mono text-xs uppercase tracking-wider text-ink-500 sm:w-32 shrink-0" datetime={p.data.date.toISOString()}>
+              {fmt(p.data.date)}
+            </time>
+            <div class="min-w-0 flex-1">
+              <div class="text-ink-100 font-medium group-hover:text-accent">{p.data.title}</div>
+              {p.data.description && (
+                <p class="mt-1 text-sm text-ink-400 line-clamp-2">{p.data.description}</p>
+              )}
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>

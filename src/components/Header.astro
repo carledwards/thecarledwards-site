@@ -1,0 +1,36 @@
+---
+const { pathname } = Astro.url;
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/blog/', label: 'Writing' },
+  { href: '/about/', label: 'About' },
+];
+const isActive = (href: string) =>
+  href === '/' ? pathname === '/' : pathname.startsWith(href);
+---
+
+<header class="border-b border-ink-800/80 bg-ink-950/70 backdrop-blur-md sticky top-0 z-40">
+  <div class="container-wide flex h-16 items-center justify-between">
+    <a href="/" class="group flex items-center gap-3 font-mono text-sm">
+      <span class="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_theme(colors.accent.DEFAULT)]"></span>
+      <span class="text-ink-100 group-hover:text-accent">
+        Carl<span class="hidden sm:inline"> Edwards</span>
+      </span>
+    </a>
+    <nav class="flex items-center gap-1">
+      {links.map((l) => (
+        <a
+          href={l.href}
+          class:list={[
+            'px-3 py-1.5 rounded-md text-sm font-medium',
+            isActive(l.href)
+              ? 'text-ink-100 bg-ink-800/60'
+              : 'text-ink-400 hover:text-ink-100 hover:bg-ink-800/40',
+          ]}
+        >
+          {l.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
