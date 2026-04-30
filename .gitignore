@@ -12,6 +12,9 @@ node_modules/
 .env.production
 npm-debug.log*
 
+# Claude Code
+/.claude/
+
 # Executable may be added to repository
 hugo.exe
 hugo.darwin

@@ -17,15 +17,16 @@ const groupedByYear = posts.reduce<Record<string, typeof posts>>((acc, p) => {
 const years = Object.keys(groupedByYear).sort((a, b) => Number(b) - Number(a));
 ---
 
-<BaseLayout title="Writing" description="Essays and notes by Carl Edwards on engineering, systems, and AI tooling.">
+<BaseLayout title="Writing" description="Essays and implementation notes by Carl Edwards on engineering, systems, and AI tooling.">
   <section class="container-wide py-20">
-    <div class="text-mono-tag mb-4">// writing</div>
+    <div class="text-mono-tag mb-4">Writing</div>
     <h1 class="text-4xl sm:text-5xl font-semibold text-ink-100 tracking-tight">
-      Notes from the work.
+      Writing on software, systems, and engineering work.
     </h1>
     <p class="mt-4 max-w-2xl text-ink-300">
-      Essays on engineering, leadership, AI-native workflows, and the occasional weekend
-      diversion. {posts.length} posts and counting.
+      Essays and implementation notes on engineering leadership, system design,
+      AI-native workflows, and the developer tools that change how teams operate.
+      {posts.length} posts and counting.
     </p>
   </section>
 

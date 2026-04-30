@@ -13,7 +13,9 @@ const isActive = (href: string) =>
   <div class="container-wide flex h-16 items-center justify-between">
     <a href="/" class="group flex items-center gap-3 font-mono text-sm">
       <span class="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_theme(colors.accent.DEFAULT)]"></span>
-      <span class="text-ink-100 group-hover:text-accent">carl edwards</span>
+      <span class="text-ink-100 group-hover:text-accent">
+        Carl<span class="hidden sm:inline"> Edwards</span>
+      </span>
     </a>
     <nav class="flex items-center gap-1">
       {links.map((l) => (

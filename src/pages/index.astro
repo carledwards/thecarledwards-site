@@ -8,37 +8,52 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 
 const focus = [
   {
-    label: 'Engineering Leadership',
-    body: 'Building and growing teams that ship — pragmatic process, clear ownership, and shared technical taste. From founding engineer to CTO.',
+    label: 'Customer-Centered Engineering',
+    body: 'Starting from the user experience, then choosing the right technology, process, and implementation to make the complexity disappear.',
   },
   {
-    label: 'Systems & Architecture',
-    body: 'Distributed systems, data platforms, and developer tooling. Long-arc thinking on what to keep simple and where complexity actually pays.',
+    label: 'Technical Architecture',
+    body: 'Designing durable systems, internal platforms, and data flows with a bias toward simple operations and choices that age well.',
   },
   {
-    label: 'AI-Native Workflows',
-    body: 'Putting LLMs into the inner loop of how teams plan, build, and operate. Practical tooling — not demos. See recent posts on Claude Code, planning, and observability.',
+    label: 'AI-Native Delivery',
+    body: 'Bringing LLMs into planning, development, and operations through practical tooling, measured workflows, and working code.',
   },
 ];
 
 const work = [
   {
     title: 'Asciimator',
-    blurb: 'Browser-based ASCII animation tool. A weekend side quest that grew into a real tool.',
-    href: 'https://github.com/carledwards',
-    meta: 'side project · 2026',
+    blurb: 'Browser-based ASCII animation editor built around fast iteration, direct manipulation, and shareable output.',
+    href: 'https://asciimator.com',
+    meta: 'developer tool · 2026',
   },
   {
-    title: 'LCM-32',
-    blurb: 'Co-designed an affordable 6502-based single-board computer in 1986 with Matt Gilliland.',
-    href: 'https://github.com/carledwards/lcm-32',
-    meta: 'hardware · 1986',
+    title: '6502 Sim TUI',
+    blurb: 'Terminal UI for exploring 6502 simulation state, inspired by FoxPro-era DOS interfaces and hands-on debugging workflows.',
+    href: 'https://github.com/carledwards/6502-sim-tui',
+    meta: 'simulator · 2026',
   },
   {
-    title: 'Claude Code Mac Status Bar',
-    blurb: 'Menu-bar indicator for Claude Code state — idle, working, attention. SwiftBar + hooks.',
-    href: '/blog/claude-code-mac-status-bar/',
-    meta: 'tool · 2026',
+    title: 'Claude Usage TRMNL',
+    blurb: 'E-ink dashboard for Claude Code usage limits, using a small local script and a TRMNL private plugin.',
+    href: '/blog/claude-usage-trmnl/',
+    meta: 'AI workflow · 2026',
+  },
+];
+
+const profile = [
+  {
+    label: 'Role',
+    value: 'CTO, architect, and hands-on software builder',
+  },
+  {
+    label: 'Current focus',
+    value: 'Customer-centered systems, AI-enabled workflows, and developer tools',
+  },
+  {
+    label: 'Background',
+    value: 'Self-taught, hands-on path from BASIC and 6502 assembly to engineering leadership',
   },
 ];
 
@@ -46,24 +61,26 @@ const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 ---
 
-<BaseLayout title="Carl Edwards">
+<BaseLayout
+  title="Carl Edwards"
+  description="Carl Edwards is a CTO, architect, and hands-on software builder writing about customer-centered systems, engineering leadership, AI workflows, and developer tools."
+>
   <section class="relative overflow-hidden border-b border-ink-800/80">
     <div class="absolute inset-0 grid-bg opacity-60"></div>
-    <div class="container-wide relative py-24 sm:py-32">
+    <div class="container-wide relative grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
       <div class="max-w-3xl">
         <div class="text-mono-tag mb-6 flex items-center gap-3">
           <span class="inline-block h-1.5 w-1.5 rounded-full bg-accent"></span>
-          <span>engineering leader · architect · cto</span>
+          <span>CTO · architect · hands-on builder</span>
         </div>
         <h1 class="text-4xl sm:text-6xl font-semibold text-ink-100 leading-[1.05] tracking-tight">
-          I build software,
-          <span class="text-accent">teams</span>, and the
-          <span class="text-accent">tools</span> that let both ship faster.
+          I lead engineering teams and build the
+          <span class="text-accent">tools, systems, and workflows</span>
+          that help them ship durable software.
         </h1>
         <p class="mt-8 text-lg sm:text-xl text-ink-300 leading-relaxed max-w-2xl">
-          Hi, I'm Carl. Forty years in: from 6502 assembly on a Commodore 64 to leading
-          engineering orgs and shipping AI-native developer tooling. I write here about the
-          craft, the systems, and what holds up under pressure.
+          I'm Carl Edwards. I love delighting users: gather their ideas, build
+          something quickly for us to react to, then learn and iterate.
         </p>
         <div class="mt-10 flex flex-wrap gap-3">
           <a href="/blog/" class="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-accent-dim">
@@ -79,12 +96,43 @@ const fmt = (d: Date) =>
           </a>
         </div>
       </div>
+
+      <aside class="border-t border-ink-800 pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+        <img
+          src="/images/avatar.jpg"
+          alt="Carl Edwards"
+          class="h-28 w-28 rounded-full border border-ink-700 object-cover"
+          loading="eager"
+        />
+        <dl class="mt-8 space-y-6">
+          {profile.map((item) => (
+            <div>
+              <dt class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500">
+                {item.label}
+              </dt>
+              <dd class="mt-2 text-sm leading-relaxed text-ink-200">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </aside>
     </div>
   </section>
 
   <section class="container-wide py-20">
-    <div class="text-mono-tag mb-10">// what I work on</div>
-    <div class="grid gap-px bg-ink-800 sm:grid-cols-3 rounded-lg overflow-hidden border border-ink-800">
+    <div class="max-w-2xl">
+      <div class="text-mono-tag mb-4">Practice</div>
+      <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+        Customer experience first. Technology in service of the problem.
+      </h2>
+      <p class="mt-4 text-ink-300 leading-relaxed">
+        I tend to sit where customer needs, architecture, and team execution meet:
+        translating feedback into systems, bridging technology gaps, and helping teams
+        ship solutions users do not have to think about.
+      </p>
+    </div>
+    <div class="mt-10 grid gap-px bg-ink-800 sm:grid-cols-3 rounded-lg overflow-hidden border border-ink-800">
       {focus.map((f) => (
         <div class="bg-ink-900 p-6 sm:p-8 hover:bg-ink-800/70 transition-colors">
           <div class="text-ink-100 font-semibold tracking-tight">{f.label}</div>
@@ -96,7 +144,12 @@ const fmt = (d: Date) =>
 
   <section class="container-wide py-20 border-t border-ink-800/80">
     <div class="flex items-baseline justify-between mb-10">
-      <div class="text-mono-tag">// selected work</div>
+      <div>
+        <div class="text-mono-tag mb-4">Selected Work</div>
+        <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+          Developer tools, systems, and hardware foundations.
+        </h2>
+      </div>
     </div>
     <div class="grid gap-4 sm:grid-cols-3">
       {work.map((w) => (
@@ -111,7 +164,12 @@ const fmt = (d: Date) =>
 
   <section class="container-wide py-20 border-t border-ink-800/80">
     <div class="flex items-baseline justify-between mb-10">
-      <div class="text-mono-tag">// recent writing</div>
+      <div>
+        <div class="text-mono-tag mb-4">Recent Writing</div>
+        <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
+          Notes from building and leading.
+        </h2>
+      </div>
       <a href="/blog/" class="text-sm text-ink-400 hover:text-accent">all posts →</a>
     </div>
     <ul class="divide-y divide-ink-800 border-y border-ink-800">

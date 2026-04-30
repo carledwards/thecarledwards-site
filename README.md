@@ -1,39 +1,61 @@
-# Custom Hugo Theme
+# thecarledwards.com
 
-This site uses a customized version of the M10C theme. The original theme is kept as a reference while custom modifications are made in the root directories.
+Personal site of Carl Edwards. Built with [Astro](https://astro.build),
+styled with Tailwind, deployed on Cloudflare Pages.
 
-## Directory Structure for Customization
+## Local development
+
+```bash
+npm install
+npm run dev      # http://localhost:4321
+npm run build    # → dist/
+npm run preview  # serves dist/ locally
+```
+
+## Project layout
 
 ```
 .
-├── assets/
-│   └── css/                    # Custom CSS/SCSS files
-│       ├── main.scss          # Main stylesheet (override theme styles here)
-│       ├── _base.scss         # Base styles
-│       └── components/        # Component-specific styles
-├── layouts/
-│   ├── _default/              # Default layout templates
-│   │   ├── baseof.html       # Base template
-│   │   └── single.html       # Single page template
-│   └── partials/             # Partial templates
+├── astro.config.mjs        # publicDir: static/, outDir: dist/
+├── src/
+│   ├── components/         # Header, Footer
+│   ├── layouts/            # BaseLayout
+│   ├── pages/              # /, /blog, /blog/[slug], /about, /rss.xml
+│   ├── content/
+│   │   ├── config.ts       # collection schemas
+│   │   └── blog/           # markdown posts
+│   └── styles/global.css
+├── static/                 # static assets, _redirects, robots.txt, favicon
+└── dist/                   # build output (gitignored)
 ```
 
-## How to Customize
+## Adding a post
 
-1. **Styling Changes**
-   - Modify files in `assets/css/` to change the look and feel
-   - Main color scheme can be adjusted in `config.toml` under `[params.style]`
-   - Component-specific styles are in `assets/css/components/`
+Drop a markdown file in `src/content/blog/`:
 
-2. **Layout Changes**
-   - Edit templates in `layouts/_default/` to modify page structure
-   - `baseof.html` is the main template that wraps all pages
-   - `single.html` controls the layout of individual posts/pages
+```markdown
+---
+title: "Post Title"
+date: 2026-04-29
+description: "One-line summary used for SEO and the post list."
+tags: ["Tag1", "Tag2"]
+---
 
-3. **Adding New Features**
-   - Create new partial templates in `layouts/partials/`
-   - Add new SCSS files in `assets/css/components/`
-   - Reference new partials in existing templates
+Body...
+```
 
-## Original Theme Reference
-The original M10C theme is kept in `themes/hugo-theme-m10c/` for reference. Any file in the root `layouts/` or `assets/` directory will override the corresponding theme file.
+## Deployment
+
+Cloudflare Pages, building from `main`:
+
+- Build command: `npm run build`
+- Build output: `dist`
+- Env: `NODE_VERSION=20`
+
+Old Hugo URLs (`/posts/<slug>/`, `/index.xml`) redirect to the new paths via
+`static/_redirects`.
+
+## License & copyright
+
+- Source code: [MIT](./LICENSE)
+- Written content (posts, training, media): see [COPYRIGHT.md](./COPYRIGHT.md)

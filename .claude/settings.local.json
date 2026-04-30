@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(git -C /Users/carledwards/dev/carledwards/thecarledwards-site status)",
-      "Bash(npm install *)",
-      "Bash(npm run *)"
-    ]
-  }
-}
