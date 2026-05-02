@@ -6,6 +6,17 @@ node_modules/
 .env.production
 npm-debug.log*
 
+# Go workspace — local-only override that points at sibling repos
+# (e.g. ../foxpro-go) so dev iteration doesn't require pushing tags.
+# CI builds from foxpro/go.mod's pinned version.
+go.work
+go.work.sum
+
+# Built FoxPro Mode artifacts. Rebuilt locally by `make -C foxpro build`
+# and by the deploy workflow on every push.
+/static/foxpro/sim.wasm
+/static/foxpro/wasm_exec.js
+
 # Claude Code
 /.claude/
 

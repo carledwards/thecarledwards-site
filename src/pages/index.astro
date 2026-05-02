@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FoxproOverlay from '../components/FoxproOverlay.astro';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -190,4 +191,6 @@ const fmt = (d: Date) =>
       ))}
     </ul>
   </section>
+
+  <FoxproOverlay slot="overlays" />
 </BaseLayout>
