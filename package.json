@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "prebuild": "make -C foxpro build",
+    "prebuild": "sh foxpro/build-ci.sh",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
