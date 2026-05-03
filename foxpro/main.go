@@ -139,6 +139,10 @@ func siteCommands(a *foxpro.App) []command {
 			cp.Print("Opening RSS feed…")
 			openURL("/rss.xml")
 		}},
+		{"PROJECTS", "Go to the projects page", func(cp *foxpro.CommandProvider, args string) {
+			cp.Print("Heading to projects…")
+			navigate("/projects/")
+		}},
 		{"BLOG", "Go to the writing index", func(cp *foxpro.CommandProvider, args string) {
 			cp.Print("Heading to the blog…")
 			navigate("/blog/")
@@ -188,6 +192,7 @@ func setupMenus(a *foxpro.App, showCmdWindow func()) {
 			Label: "&Site",
 			Items: []foxpro.MenuItem{
 				{Label: "&Home", OnSelect: func() { navigate("/") }},
+				{Label: "&Projects", OnSelect: func() { navigate("/projects/") }},
 				{Label: "&Blog", OnSelect: func() { navigate("/blog/") }},
 			},
 		},

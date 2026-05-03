@@ -22,24 +22,21 @@ const focus = [
   },
 ];
 
+// Two-card teaser for the homepage. Full project list lives at
+// /projects/ — keep this slice short and current; let the projects
+// page be the source of truth for everything else.
 const work = [
+  {
+    title: '6502 Simulator',
+    blurb: 'A 6502 microcomputer with a VIC video chip and a real 6522 VIA timer — runs in your terminal and in your browser, same code.',
+    href: '/projects/',
+    meta: 'simulator · 2026',
+  },
   {
     title: 'Asciimator',
     blurb: 'Browser-based ASCII animation editor built around fast iteration, direct manipulation, and shareable output.',
     href: 'https://asciimator.com',
     meta: 'developer tool · 2026',
-  },
-  {
-    title: '6502 Sim TUI',
-    blurb: 'Terminal UI for exploring 6502 simulation state, inspired by FoxPro-era DOS interfaces and hands-on debugging workflows.',
-    href: 'https://github.com/carledwards/6502-sim-tui',
-    meta: 'simulator · 2026',
-  },
-  {
-    title: 'Claude Usage TRMNL',
-    blurb: 'E-ink dashboard for Claude Code usage limits, using a small local script and a TRMNL private plugin.',
-    href: '/blog/claude-usage-trmnl/',
-    meta: 'AI workflow · 2026',
   },
 ];
 
@@ -68,7 +65,7 @@ const fmt = (d: Date) =>
 >
   <section class="relative overflow-hidden border-b border-ink-800/80">
     <div class="absolute inset-0 grid-bg opacity-60"></div>
-    <div class="container-wide relative grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+    <div class="container-wide relative grid gap-12 pt-20 pb-12 sm:pt-28 sm:pb-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
       <div class="max-w-3xl">
         <div class="text-mono-tag mb-6 flex items-center gap-3">
           <span class="inline-block h-1.5 w-1.5 rounded-full bg-accent"></span>
@@ -121,7 +118,7 @@ const fmt = (d: Date) =>
     </div>
   </section>
 
-  <section class="container-wide py-20">
+  <section class="container-wide py-12">
     <div class="max-w-2xl">
       <div class="text-mono-tag mb-4">Practice</div>
       <h2 class="text-3xl font-semibold tracking-tight text-ink-100">
@@ -143,7 +140,7 @@ const fmt = (d: Date) =>
     </div>
   </section>
 
-  <section class="container-wide py-20 border-t border-ink-800/80">
+  <section class="container-wide py-12 border-t border-ink-800/80">
     <div class="flex items-baseline justify-between mb-10">
       <div>
         <div class="text-mono-tag mb-4">Selected Work</div>
@@ -151,8 +148,9 @@ const fmt = (d: Date) =>
           Developer tools, systems, and hardware foundations.
         </h2>
       </div>
+      <a href="/projects/" class="text-sm text-ink-400 hover:text-accent">all projects →</a>
     </div>
-    <div class="grid gap-4 sm:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2">
       {work.map((w) => (
         <a href={w.href} class="group block rounded-lg border border-ink-800 bg-ink-900 p-6 hover:border-ink-600 hover:bg-ink-800/60">
           <div class="font-mono text-xs uppercase tracking-wider text-ink-400">{w.meta}</div>
@@ -163,7 +161,7 @@ const fmt = (d: Date) =>
     </div>
   </section>
 
-  <section class="container-wide py-20 border-t border-ink-800/80">
+  <section class="container-wide py-12 border-t border-ink-800/80">
     <div class="flex items-baseline justify-between mb-10">
       <div>
         <div class="text-mono-tag mb-4">Recent Writing</div>

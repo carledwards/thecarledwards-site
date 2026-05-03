@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+type Link = { label: string; href: string };
+type Project = {
+  slug: string;
+  title: string;
+  tagline: string;
+  blurb: string;
+  status: 'Active' | 'Working' | 'Archived';
+  year: string;
+  tags: string[];
+  hero?: string;
+  links: Link[];
+};
+
+// Projects in priority order (most-foregrounded first). Each entry
+// is self-contained so reordering is a one-line move.
+const projects: Project[] = [
+  {
+    slug: '6502-sim',
+    title: '6502 Simulator',
+    tagline: 'A 6502 microcomputer with a VIC video chip and a real 6522 VIA timer — runs in your terminal and in your browser, same code.',
+    blurb:
+      'A working 6502 microcomputer simulator on a path toward a teaching tool. CPU, RAM, ROM, VIC video chip, and a 6522 VIA peripheral wired to a memory-mapped bus with hardware-realistic chip-select decoding — demos written here are intended to transfer to real silicon unmodified. Built in Go on top of foxpro-go (a from-scratch homage to FoxPro for DOS) and 6502-netsim-go (a transistor-level Visual6502 port). Same source compiles as a TUI and as a WebAssembly app.',
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'WebAssembly', 'tcell', '6502', 'Retro-tech'],
+    hero: '/images/projects/6502-sim/hero.gif',
+    links: [
+      { label: 'Live demo', href: 'https://carledwards.github.io/6502-sim-tui/' },
+      { label: 'Source', href: 'https://github.com/carledwards/6502-sim-tui' },
+    ],
+  },
+  {
+    slug: 'apple-intelligence-foundation-server',
+    title: 'Apple Intelligence Foundation Server',
+    tagline: 'Local HTTP server that exposes Apple Intelligence on-device foundation models behind a simple API.',
+    blurb:
+      'Lets any tool on your Mac talk to Apple Intelligence as if it were a hosted LLM endpoint — useful for automations, scripts, and editors that already speak HTTP+JSON. Keeps inference fully on-device.',
+    status: 'Active',
+    year: '2026',
+    tags: ['Swift', 'Apple Intelligence', 'Local-first AI', 'HTTP'],
+    links: [
+      { label: 'Source', href: 'https://github.com/carledwards/apple-intelligence-foundation-server' },
+    ],
+  },
+  {
+    slug: 'asciimator',
+    title: 'Asciimator',
+    tagline: 'Browser-based ASCII animation editor built around fast iteration, direct manipulation, and shareable output.',
+    blurb:
+      'A direct-manipulation editor for ASCII animation that emphasizes immediacy: edit, scrub, share. Frame buffer, timeline, and export pipeline all designed to keep the loop between idea and result as short as possible.',
+    status: 'Active',
+    year: '2026',
+    tags: ['Web app', 'Editor', 'Animation'],
+    hero: '/images/projects/asciimator/hero.png',
+    links: [
+      { label: 'Open Asciimator', href: 'https://asciimator.com' },
+      { label: 'Source', href: 'https://github.com/carledwards/Asciimator' },
+    ],
+  },
+  {
+    slug: 'wordclock',
+    title: 'Wordclock',
+    tagline: 'A clock that tells time in words on an illuminated grid — half hardware, half software, all charm.',
+    blurb:
+      'A typographic word clock — letters arranged in a fixed grid, lit selectively to spell out the current time as a phrase ("IT IS HALF PAST THREE"). The gallery shows physical builds and color schemes; the repo has the firmware and a browser-based simulator.',
+    status: 'Working',
+    year: '2025',
+    tags: ['Hardware', 'LEDs', 'Web', 'Typography'],
+    hero: '/images/wordclock.png',
+    links: [
+      { label: 'Gallery', href: 'https://carledwards.github.io/wordclock/gallery.html' },
+      { label: 'Source', href: 'https://github.com/carledwards/wordclock' },
+    ],
+  },
+  {
+    slug: 'foxpro-go',
+    title: 'foxpro-go',
+    tagline: 'A from-scratch Go TUI framework that channels FoxPro for DOS — windows, menus, drop shadows, drag-to-move.',
+    blurb:
+      'The retro-DOS-flavored TUI library that powers 6502 Sim TUI and other tools. Built on tcell, with a wasm bridge that renders the cell grid to a browser canvas. Provides PixelContent overlays so windows can host pixel buffers (used by the 6502 sim for graphics-mode framebuffers).',
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'TUI', 'Library', 'WebAssembly'],
+    links: [
+      { label: 'Live demo', href: 'https://carledwards.github.io/foxpro-go/' },
+      { label: 'Source', href: 'https://github.com/carledwards/foxpro-go' },
+    ],
+  },
+  {
+    slug: 'claude-usage-trmnl',
+    title: 'Claude Usage TRMNL',
+    tagline: 'E-ink dashboard for Claude Code usage limits, using a small local script and a TRMNL private plugin.',
+    blurb:
+      'Pairs a tiny local script with a TRMNL private plugin to surface live Claude Code usage on an e-ink panel. The "ambient awareness without checking a tab" pattern, applied to AI-coding budget tracking.',
+    status: 'Working',
+    year: '2026',
+    tags: ['AI workflow', 'TRMNL', 'E-ink'],
+    hero: '/images/claude-usage-trmnl.png',
+    links: [
+      { label: 'TRMNL recipe', href: 'https://trmnl.com/recipes/263932' },
+      { label: 'Source', href: 'https://github.com/carledwards/claude-usage-trmnl' },
+      { label: 'Build notes', href: '/blog/claude-usage-trmnl/' },
+    ],
+  },
+];
+
+const statusColor = (s: Project['status']) =>
+  s === 'Active'
+    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+    : s === 'Working'
+    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+    : 'bg-ink-800/60 text-ink-400 border-ink-700';
+---
+
+<BaseLayout
+  title="Projects"
+  description="Software projects by Carl Edwards — a 6502 microcomputer simulator, an ASCII animation editor, a retro TUI framework, and more."
+>
+  <section class="container-wide py-20">
+    <div class="text-mono-tag mb-4">Projects</div>
+    <h1 class="text-4xl sm:text-5xl font-semibold text-ink-100 tracking-tight">
+      Things I'm building.
+    </h1>
+    <p class="mt-4 max-w-2xl text-ink-300">
+      Personal projects spanning developer tools, retro-tech experiments, and
+      ambient AI workflows. Most are open source. The ones with live demos
+      let you poke at them in your browser.
+    </p>
+  </section>
+
+  <section class="container-wide pb-24 space-y-12">
+    {projects.map((p) => (
+      <article class="rounded-lg border border-ink-800 bg-ink-900 overflow-hidden">
+        <div class="p-6 sm:p-8 space-y-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class:list={[
+              'inline-block rounded border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider',
+              statusColor(p.status),
+            ]}>
+              {p.status}
+            </span>
+            <span class="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-500">
+              {p.year}
+            </span>
+          </div>
+          <h2 class="text-2xl font-semibold tracking-tight text-ink-100">
+            {p.title}
+          </h2>
+          <p class="text-ink-300 leading-relaxed">
+            {p.tagline}
+          </p>
+          {!p.hero && (
+            <p class="text-ink-300 leading-relaxed">
+              {p.blurb}
+            </p>
+          )}
+        </div>
+
+        {p.hero && (
+          <>
+            <a
+              href={p.links[0]?.href}
+              class="block px-6 sm:px-10 pb-6 sm:pb-8 group"
+            >
+              <img
+                src={p.hero}
+                alt={`${p.title} screenshot`}
+                class="block w-full h-auto rounded-md mx-auto
+                       ring-1 ring-white/10
+                       shadow-[0_24px_48px_-16px_rgba(0,0,0,0.7)]
+                       brightness-90 saturate-95
+                       transition duration-300
+                       group-hover:brightness-100 group-hover:saturate-100
+                       group-hover:ring-white/20"
+                loading="lazy"
+              />
+            </a>
+            <div class="px-6 sm:px-8 pb-2">
+              <p class="text-ink-300 leading-relaxed">
+                {p.blurb}
+              </p>
+            </div>
+          </>
+        )}
+
+        <div class="px-6 sm:px-8 pb-6 sm:pb-8 pt-4 space-y-5">
+          {p.tags.length > 0 && (
+            <div class="flex flex-wrap gap-2">
+              {p.tags.map((t) => (
+                <span class="font-mono text-[10px] uppercase tracking-wider text-ink-400 bg-ink-800/60 border border-ink-800 px-2 py-0.5 rounded">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+          <div class="flex flex-wrap gap-3">
+            {p.links.map((l, i) => (
+              <a
+                href={l.href}
+                class:list={[
+                  'inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium',
+                  i === 0
+                    ? 'bg-accent text-ink-950 hover:bg-accent-dim font-semibold'
+                    : 'border border-ink-700 text-ink-200 hover:border-ink-500 hover:bg-ink-800/40',
+                ]}
+              >
+                {l.label}
+                <span aria-hidden="true">→</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </article>
+    ))}
+  </section>
+</BaseLayout>
