@@ -3,7 +3,7 @@ module github.com/carledwards/thecarledwards-site/foxpro
 go 1.22
 
 require (
-	github.com/carledwards/foxpro-go v0.1.1
+	github.com/carledwards/foxpro-go v0.3.0
 	github.com/gdamore/tcell/v2 v2.7.4
 )
 

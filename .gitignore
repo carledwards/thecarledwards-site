@@ -16,6 +16,7 @@ go.work.sum
 # and by the deploy workflow on every push.
 /static/foxpro/sim.wasm
 /static/foxpro/wasm_exec.js
+/static/foxpro/foxpro.js
 
 # Claude Code
 /.claude/

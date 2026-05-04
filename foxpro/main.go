@@ -9,6 +9,7 @@
 package main
 
 import (
+	"strconv"
 	"strings"
 	"syscall/js"
 	"time"
@@ -29,6 +30,16 @@ func main() {
 	s.EnableMouse()
 
 	app := foxpro.NewAppWithScreen(s)
+
+	// Restore the previously chosen theme from localStorage. Stored
+	// as a small integer index into foxpro.ThemePresets — survives
+	// page refreshes and new tabs.
+	const themeStorageKey = "foxpro.themeIndex"
+	if idx, ok := readLocalStorageInt(themeStorageKey); ok &&
+		idx >= 0 && idx < len(foxpro.ThemePresets) {
+		app.Settings.ThemeIndex = idx
+		app.Theme = foxpro.ThemeFromPalette(foxpro.ThemePresets[idx].Palette())
+	}
 
 	// Browser-appropriate settings.
 	app.Settings.QuitKeys = nil
@@ -86,10 +97,17 @@ func main() {
 	registerCommands(app)
 	setupMenus(app, showCmdWindow)
 
-	// Drive a 500ms heartbeat so the command window's cursor blink
-	// animates. Tick posts a no-op event each interval, which wakes
-	// foxpro's PollEvent loop and triggers a redraw.
-	app.Tick(500*time.Millisecond, nil)
+	// Drive a 500ms heartbeat: animates the cursor blink AND
+	// polls Settings.ThemeIndex for changes so we can persist the
+	// pick to localStorage. Cheap dirty-check; nothing else needs
+	// the tick callback today.
+	lastSavedTheme := app.Settings.ThemeIndex
+	app.Tick(500*time.Millisecond, func() {
+		if app.Settings.ThemeIndex != lastSavedTheme {
+			writeLocalStorageInt(themeStorageKey, app.Settings.ThemeIndex)
+			lastSavedTheme = app.Settings.ThemeIndex
+		}
+	})
 
 	// Greeting toast on first open. Auto-dismisses after 5s; any
 	// key/mouse press dismisses sooner. Theme/position/dismiss-rules
@@ -168,11 +186,26 @@ func registerCommands(a *foxpro.App) {
 
 func setupMenus(a *foxpro.App, showCmdWindow func()) {
 	a.MenuBar = foxpro.NewMenuBar([]foxpro.Menu{
+		// System menu — FoxPro for DOS convention, first slot.
+		// Holds the "about" entries plus a Theme picker that flips
+		// the foxpro-go palette (foxpro-go ships several presets;
+		// the picker is also where shadow/status-bar toggles live).
+		{
+			Label: "&System",
+			Items: []foxpro.MenuItem{
+				{Label: "&About FoxPro Mode", OnSelect: func() { openAboutFoxpro(a) }},
+				{Label: "About &Carl Edwards", OnSelect: func() { openAboutCarl(a) }},
+				{Separator: true},
+				{Label: "&Theme...", OnSelect: func() {
+					a.Manager.Add(foxpro.NewSettingsWindow(a))
+				}},
+				{Separator: true},
+				{Label: "&Reboot", OnSelect: rebootMachine},
+			},
+		},
 		{
 			Label: "&File",
 			Items: []foxpro.MenuItem{
-				{Label: "&Command Window", Hotkey: "F2", OnSelect: showCmdWindow},
-				{Separator: true},
 				{Label: "Cl&ose (Esc)", OnSelect: closeOverlay},
 			},
 		},
@@ -196,11 +229,14 @@ func setupMenus(a *foxpro.App, showCmdWindow func()) {
 				{Label: "&Blog", OnSelect: func() { navigate("/blog/") }},
 			},
 		},
+		// Window menu — final slot, FoxPro DOS convention. Holds
+		// per-window controls. The Command window's Ctrl+F2
+		// shortcut is the original FoxPro DOS binding; foxpro-go
+		// also accepts plain F2 for backward compatibility.
 		{
-			Label: "&Help",
+			Label: "&Window",
 			Items: []foxpro.MenuItem{
-				{Label: "&About FoxPro Mode", OnSelect: func() { openAboutFoxpro(a) }},
-				{Label: "About &Carl Edwards", OnSelect: func() { openAboutCarl(a) }},
+				{Label: "&Command", Hotkey: "Ctrl+F2", OnSelect: showCmdWindow},
 			},
 		},
 	})
@@ -327,4 +363,49 @@ func navigate(path string) {
 // closeOverlay hides the foxpro canvas without terminating the wasm.
 func closeOverlay() {
 	js.Global().Get("siteAPI").Call("close")
+}
+
+// rebootMachine wipes session-persistent state (localStorage) and
+// hands off to the host's siteAPI.reboot, which runs the simulated
+// BIOS-POST → DOS → FoxPro splash animation and then reloads the
+// page so the wasm comes up fresh.
+func rebootMachine() {
+	defer func() { recover() }()
+	if ls := js.Global().Get("localStorage"); !ls.IsUndefined() && !ls.IsNull() {
+		ls.Call("removeItem", "foxpro.themeIndex")
+	}
+	js.Global().Get("siteAPI").Call("reboot")
+}
+
+// readLocalStorageInt fetches an integer from window.localStorage.
+// ok=false on missing key, malformed value, or unavailable storage
+// (private-browsing modes can null it or throw on access).
+func readLocalStorageInt(key string) (int, bool) {
+	defer func() { recover() }()
+	ls := js.Global().Get("localStorage")
+	if ls.IsUndefined() || ls.IsNull() {
+		return 0, false
+	}
+	v := ls.Call("getItem", key)
+	if v.IsUndefined() || v.IsNull() {
+		return 0, false
+	}
+	n, err := strconv.Atoi(v.String())
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
+// writeLocalStorageInt persists an integer to window.localStorage.
+// Best-effort: errors (private-browsing, quota-exceeded) are
+// swallowed because none of them warrant breaking the session —
+// the user just won't get persistence on next reload.
+func writeLocalStorageInt(key string, n int) {
+	defer func() { recover() }()
+	ls := js.Global().Get("localStorage")
+	if ls.IsUndefined() || ls.IsNull() {
+		return
+	}
+	ls.Call("setItem", key, strconv.Itoa(n))
 }

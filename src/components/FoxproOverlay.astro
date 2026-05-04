@@ -71,7 +71,39 @@
   ></canvas>
 </div>
 
+<!-- DOS reboot overlay. Stacks above #foxpro-overlay (z-60 vs z-50)
+     so the simulated BIOS-POST → DOS → FoxPro splash sequence covers
+     everything during a Reboot. Hidden by default; shown only while
+     siteAPI.reboot() is running. -->
+<div
+  id="foxpro-boot"
+  class="fixed inset-0 z-[60] hidden bg-black"
+  aria-hidden="true"
+>
+  <pre
+    id="foxpro-boot-output"
+    class="m-0 px-4 py-3 text-[14px] leading-tight font-mono text-[#cccccc] whitespace-pre-wrap"
+    style="text-shadow: 0 0 1px rgba(204,204,204,0.5);"
+  ></pre>
+  <div
+    id="foxpro-boot-splash"
+    class="hidden absolute inset-0 flex items-center justify-center"
+  >
+    <pre class="m-0 font-mono text-[#ffffff] bg-[#0000aa] px-6 py-4 text-[16px] leading-tight border-4 border-[#aaaaaa]">
+   Microsoft  FoxPro  for  DOS
+
+         Version 2.6
+
+   (C) Copyright Microsoft Corp.
+            1989-1995
+
+   Loading...
+    </pre>
+  </div>
+</div>
+
 <script is:inline src="/foxpro/wasm_exec.js"></script>
+<script is:inline src="/foxpro/foxpro.js"></script>
 <script is:inline>
   // siteAPI — the seam Go talks through. Defined before the wasm
   // boots so js.Global().Get("siteAPI").Call(...) inside the wasm
@@ -81,38 +113,125 @@
       window.open(url, '_blank', 'noopener,noreferrer'),
     navigate: (path) => window.location.assign(path),
     close: () => window.foxproOverlay && window.foxproOverlay.close(),
+    reboot: () => fakeReboot(),
   };
 
-  (() => {
-    // Cell metrics. SF Mono / Menlo / generic monospace render glyphs
-    // with descenders that extend ~25% below the alphabetic baseline.
-    // CELL_H needs to leave room for that or letters like g, p, y, j
-    // get sliced at the bottom. Rule of thumb: CELL_H >= FONT_PX * 1.4.
-    const FONT_PX = 16;
-    const CELL_H = 22;
-    const DEFAULT_FG = '#cccccc';
-    const DEFAULT_BG = '#0000aa';
-    const DEFAULT_COLOR_SENTINEL = 0xff000000;
+  // fakeReboot — runs a tongue-in-cheek BIOS POST → DOS → FoxPro
+  // splash sequence on a black overlay, then reloads the page so
+  // the wasm comes up fresh (Go-side cleared localStorage already).
+  // Pure cosmetic: nothing actually crashes or restarts; the page
+  // reload at the end is what gives the user a clean slate.
+  async function fakeReboot() {
+    const bootEl = document.getElementById('foxpro-boot');
+    const outEl = document.getElementById('foxpro-boot-output');
+    const splashEl = document.getElementById('foxpro-boot-splash');
+    const overlayEl = document.getElementById('foxpro-overlay');
+    if (!bootEl || !outEl) {
+      window.location.reload();
+      return;
+    }
 
+    // Hide foxpro overlay if it's open; show the boot terminal.
+    overlayEl.classList.add('hidden');
+    overlayEl.classList.remove('flex');
+    splashEl.classList.add('hidden');
+    outEl.textContent = '';
+    bootEl.classList.remove('hidden');
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    // Stage 1 — BIOS POST. Each line scrolls in with a tiny delay
+    // so the eye registers the sequence, with longer pauses on
+    // realistic-feeling moments (memory test, drive detection).
+    const lines = [
+      ['AMIBIOS (C)1995 American Megatrends, Inc.', 80],
+      ['BIOS Date: 04/15/95   v2.6.1   Rev: 1.0', 60],
+      ['', 60],
+      ['Pentium-S CPU  at 100MHz', 60],
+      ['Memory Test :    640 KB OK', 220],
+      ['Memory Test :  16384 KB OK', 220],
+      ['', 100],
+      ['Press DEL to enter SETUP', 80],
+      ['', 100],
+      ['Detecting Primary Master  ... ST31010A 1.0GB', 320],
+      ['Detecting Primary Slave   ... None', 200],
+      ['Detecting Secondary Master ... CD-ROM TOSHIBA', 260],
+      ['Detecting Secondary Slave ... None', 180],
+      ['', 120],
+      ['Verifying DMI Pool Data....................', 250],
+      ['', 200],
+      // Stage 2 — DOS boot
+      ['Starting MS-DOS...', 600],
+      ['', 80],
+      ['HIMEM is testing extended memory...done.', 220],
+      ['EMM386 successfully installed.', 120],
+      ['Microsoft Mouse Driver V9.01 installed.', 120],
+      ['SMARTDrv: Cache size 2,048 KB in extended memory.', 140],
+      ['', 200],
+      // Stage 3 — autoexec lands the user at FoxPro
+      ['C:\\>cd \\FOXPRO', 280],
+      ['', 80],
+      ['C:\\FOXPRO>fox', 350],
+      ['', 250],
+    ];
+    for (const [text, wait] of lines) {
+      outEl.textContent += text + '\n';
+      bootEl.scrollTop = bootEl.scrollHeight;
+      await sleep(wait);
+    }
+
+    // Stage 4 — FoxPro splash overlays the terminal for a moment.
+    splashEl.classList.remove('hidden');
+    splashEl.classList.add('flex');
+    await sleep(1400);
+
+    // Stage 5 — full reload. localStorage was cleared by Go
+    // before this fired, so the next boot starts on the default
+    // theme. sessionStorage tells the freshly-loaded page to
+    // auto-open the overlay so the user lands directly back
+    // inside FoxPro Mode instead of staring at the homepage.
+    try {
+      sessionStorage.setItem('foxpro.autoOpen', '1');
+    } catch (e) {
+      /* private-mode etc. — fall back to a normal reload */
+    }
+    window.location.reload();
+  }
+
+  // If a Reboot just finished (sessionStorage flag set before the
+  // reload), pop the overlay open as soon as we're loaded.
+  try {
+    if (sessionStorage.getItem('foxpro.autoOpen') === '1') {
+      sessionStorage.removeItem('foxpro.autoOpen');
+      // Defer one tick so the toggle's open() handler — defined
+      // a few lines below in the same script — has finished
+      // attaching window.foxproOverlay.
+      setTimeout(() => {
+        if (window.foxproOverlay) window.foxproOverlay.open();
+      }, 0);
+    }
+  } catch (e) {
+    /* ignore — sessionStorage unavailable */
+  }
+
+  (() => {
+    // Lazy-load wasm on first overlay open. Once booted it stays
+    // resident so subsequent toggles are instant.
     const toggle = document.getElementById('foxpro-toggle');
     const overlay = document.getElementById('foxpro-overlay');
     const canvas = document.getElementById('foxpro-screen');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const logErr = (msg, err) => {
-      console.error('[foxpro]', msg, err || '');
-    };
 
-    let cellW = 9;
-    let buf = null;
-    let view = null;
-    let booted = false;
     let bootStarted = false;
-    let stopped = false;
-
     function open() {
       overlay.classList.remove('hidden');
       overlay.classList.add('flex');
-      if (!bootStarted) bootWasm();
+      if (!bootStarted) {
+        bootStarted = true;
+        // Renderer + input wiring (waits for onFoxproReady), then
+        // boot the wasm — both supplied by foxpro-go's foxpro.js.
+        FoxproRender.attach(canvas);
+        FoxproRender.bootWasm('/foxpro/sim.wasm');
+      }
       canvas.focus();
     }
     function close() {
@@ -139,260 +258,5 @@
       if (overlay.classList.contains('hidden')) return;
       close();
     });
-
-    async function bootWasm() {
-      bootStarted = true;
-      if (typeof Go === 'undefined') {
-        logErr('wasm_exec.js failed to load');
-        return;
-      }
-      const go = new Go();
-      window.onFoxproReady = () => {
-        if (booted) return;
-        booted = true;
-        wireScreen();
-      };
-      try {
-        const r = await WebAssembly.instantiateStreaming(
-          fetch('/foxpro/sim.wasm'),
-          go.importObject,
-        );
-        go.run(r.instance);
-      } catch (err) {
-        logErr('wasm load error', err);
-      }
-    }
-
-    function wireScreen() {
-      const fw = window.foxproWasm;
-      if (!fw) {
-        logErr('foxproWasm bridge missing');
-        return;
-      }
-
-      ctx.font = `${FONT_PX}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
-      ctx.textBaseline = 'top';
-      cellW = Math.max(7, Math.ceil(ctx.measureText('M').width));
-
-      const [w, h] = fw.size();
-      canvas.width = w * cellW;
-      canvas.height = h * CELL_H;
-      // Re-set font: changing canvas dims clears state.
-      ctx.font = `${FONT_PX}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
-      ctx.textBaseline = 'top';
-
-      buf = new Uint8Array(w * h * 16);
-      view = new DataView(buf.buffer);
-
-      setupInput(fw);
-      requestAnimationFrame(frame);
-    }
-
-    function frame() {
-      if (stopped) return;
-      requestAnimationFrame(frame);
-      const fw = window.foxproWasm;
-      if (!fw || !buf) return;
-
-      let sz;
-      try {
-        sz = fw.snapshot(buf);
-      } catch (err) {
-        stopped = true;
-        logErr('foxpro exited — refresh to restart', err);
-        return;
-      }
-      const w = sz[0], h = sz[1];
-      for (let y = 0; y < h; y++) {
-        let off = y * w * 16;
-        for (let x = 0; x < w; x++) {
-          const ch = view.getUint32(off, true);
-          const fg = view.getUint32(off + 4, true);
-          const bg = view.getUint32(off + 8, true);
-          off += 16;
-          paintCell(x, y, ch, fg, bg);
-        }
-      }
-    }
-
-    function paintCell(x, y, ch, fg, bg) {
-      const px = x * cellW;
-      const py = y * CELL_H;
-      ctx.fillStyle = colorToCSS(bg, DEFAULT_BG);
-      ctx.fillRect(px, py, cellW, CELL_H);
-      if (ch === 0 || ch === 32) return;
-      const fgCss = colorToCSS(fg, DEFAULT_FG);
-      // Box-drawing (U+2500–U+257F) and block (U+2580–U+258F) chars
-      // get rendered as rect primitives so they connect cell-to-cell.
-      // ctx.fillText for these glyphs leaves visible gaps because the
-      // font's natural glyph width/height is < cellW / CELL_H.
-      if (ch >= 0x2500 && ch <= 0x258F) {
-        if (drawBoxOrBlock(px, py, ch, fgCss)) return;
-      }
-      ctx.fillStyle = fgCss;
-      ctx.fillText(String.fromCodePoint(ch), px, py + 1);
-    }
-
-    // drawBoxOrBlock renders a Unicode box-drawing or block-element
-    // glyph as fillRect primitives. Returns true if it handled the
-    // codepoint, false to fall through to fillText.
-    function drawBoxOrBlock(px, py, ch, fgCss) {
-      ctx.fillStyle = fgCss;
-      // Block elements first — solid rectangles, no font rendering.
-      switch (ch) {
-        case 0x2580: // ▀ upper half
-          ctx.fillRect(px, py, cellW, Math.floor(CELL_H / 2));
-          return true;
-        case 0x2584: // ▄ lower half
-          ctx.fillRect(px, py + Math.floor(CELL_H / 2), cellW, CELL_H - Math.floor(CELL_H / 2));
-          return true;
-        case 0x2588: // █ full block
-          ctx.fillRect(px, py, cellW, CELL_H);
-          return true;
-        case 0x258C: // ▌ left half
-          ctx.fillRect(px, py, Math.floor(cellW / 2), CELL_H);
-          return true;
-        case 0x2590: // ▐ right half
-          ctx.fillRect(px + Math.floor(cellW / 2), py, cellW - Math.floor(cellW / 2), CELL_H);
-          return true;
-      }
-      // Single-line box-drawing — extents from cell center toward
-      // each edge, drawn as 1-px rects that meet at the center.
-      // 0x2500–0x253C covers the most common subset (─│ corners
-      // ├┤┬┴┼). Anything else falls through to fillText.
-      let L = false, R = false, U = false, D = false;
-      switch (ch) {
-        case 0x2500: L = R = true; break;       // ─
-        case 0x2502: U = D = true; break;       // │
-        case 0x250C: R = D = true; break;       // ┌
-        case 0x2510: L = D = true; break;       // ┐
-        case 0x2514: R = U = true; break;       // └
-        case 0x2518: L = U = true; break;       // ┘
-        case 0x251C: U = D = R = true; break;   // ├
-        case 0x2524: U = D = L = true; break;   // ┤
-        case 0x252C: L = R = D = true; break;   // ┬
-        case 0x2534: L = R = U = true; break;   // ┴
-        case 0x253C: L = R = U = D = true; break; // ┼
-        default: return false;
-      }
-      const cx = px + Math.floor(cellW / 2);
-      const cy = py + Math.floor(CELL_H / 2);
-      const lw = 1;
-      // Each direction extends from the edge through the center pixel.
-      // Pairs naturally overlap at (cx, cy) so no gap appears.
-      if (L) ctx.fillRect(px, cy, cx - px + lw, lw);
-      if (R) ctx.fillRect(cx, cy, px + cellW - cx, lw);
-      if (U) ctx.fillRect(cx, py, lw, cy - py + lw);
-      if (D) ctx.fillRect(cx, cy, lw, py + CELL_H - cy);
-      return true;
-    }
-
-    function colorToCSS(c, fallback) {
-      if (c === DEFAULT_COLOR_SENTINEL) return fallback;
-      const r = (c >> 16) & 0xff;
-      const g = (c >> 8) & 0xff;
-      const b = c & 0xff;
-      return `rgb(${r},${g},${b})`;
-    }
-
-    function setupInput(fw) {
-      const KEYS = fw.keys, MODS = fw.mods, BTN = fw.buttons;
-
-      const specialKeys = {
-        Enter: KEYS.Enter,
-        Tab: KEYS.Tab,
-        Escape: KEYS.Esc,
-        Backspace: KEYS.Backspace2,
-        ArrowUp: KEYS.Up,
-        ArrowDown: KEYS.Down,
-        ArrowLeft: KEYS.Left,
-        ArrowRight: KEYS.Right,
-        Home: KEYS.Home,
-        End: KEYS.End,
-        PageUp: KEYS.PgUp,
-        PageDown: KEYS.PgDn,
-        Insert: KEYS.Insert,
-        Delete: KEYS.Delete,
-      };
-      for (let i = 1; i <= 12; i++) specialKeys['F' + i] = KEYS['F' + i];
-
-      canvas.addEventListener('keydown', (e) => {
-        if (e.metaKey) return; // let Cmd+R, Cmd+L, etc. through.
-        const mods =
-          (e.shiftKey ? MODS.Shift : 0) |
-          (e.ctrlKey ? MODS.Ctrl : 0) |
-          (e.altKey ? MODS.Alt : 0) |
-          (e.metaKey ? MODS.Meta : 0);
-        if (e.key === 'Tab' && e.shiftKey) {
-          e.preventDefault();
-          fw.injectKey(KEYS.Backtab, 0, mods);
-          return;
-        }
-        const sk = specialKeys[e.key];
-        if (sk !== undefined) {
-          e.preventDefault();
-          fw.injectKey(sk, 0, mods);
-          return;
-        }
-        if (e.altKey && /^Key[A-Z]$/.test(e.code)) {
-          e.preventDefault();
-          fw.injectKey(KEYS.Rune, e.code.charCodeAt(3) + 32, mods);
-          return;
-        }
-        if (e.key.length === 1) {
-          e.preventDefault();
-          fw.injectKey(KEYS.Rune, e.key.codePointAt(0), mods);
-        }
-      });
-
-      function pixelToCell(e) {
-        const r = canvas.getBoundingClientRect();
-        const px = (e.clientX - r.left) * (canvas.width / r.width);
-        const py = (e.clientY - r.top) * (canvas.height / r.height);
-        return [Math.floor(px / cellW), Math.floor(py / CELL_H)];
-      }
-      function buttonsMaskFromEvent(e) {
-        let m = 0;
-        if (e.buttons & 1) m |= BTN.Primary;
-        if (e.buttons & 2) m |= BTN.Secondary;
-        if (e.buttons & 4) m |= BTN.Middle;
-        return m;
-      }
-      function modMaskFromEvent(e) {
-        let m = 0;
-        if (e.shiftKey) m |= MODS.Shift;
-        if (e.ctrlKey) m |= MODS.Ctrl;
-        if (e.altKey) m |= MODS.Alt;
-        if (e.metaKey) m |= MODS.Meta;
-        return m;
-      }
-
-      canvas.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        canvas.focus();
-        const [cx, cy] = pixelToCell(e);
-        fw.injectMouse(cx, cy, buttonsMaskFromEvent(e), modMaskFromEvent(e));
-      });
-      canvas.addEventListener('mousemove', (e) => {
-        const [cx, cy] = pixelToCell(e);
-        fw.injectMouse(cx, cy, buttonsMaskFromEvent(e), modMaskFromEvent(e));
-      });
-      canvas.addEventListener('mouseup', (e) => {
-        e.preventDefault();
-        const [cx, cy] = pixelToCell(e);
-        fw.injectMouse(cx, cy, buttonsMaskFromEvent(e), modMaskFromEvent(e));
-      });
-      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-      canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const [cx, cy] = pixelToCell(e);
-        let btn = 0;
-        if (e.deltaY < 0) btn = BTN.WheelUp;
-        else if (e.deltaY > 0) btn = BTN.WheelDown;
-        else if (e.deltaX < 0) btn = BTN.WheelLeft;
-        else if (e.deltaX > 0) btn = BTN.WheelRight;
-        if (btn) fw.injectMouse(cx, cy, btn, modMaskFromEvent(e));
-      }, { passive: false });
-    }
   })();
 </script>
