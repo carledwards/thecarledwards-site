@@ -1,0 +1,185 @@
+---
+title: Where the program lives — meet Carl
+series: computer
+seriesTitle: How a computer works
+order: 3
+summary: When Bill powered on last lesson, the program was already sitting at $CE00 waiting for him. How? Meet Carl, Emily's twin brother — same wires, same bus, but a fundamentally different relationship with bytes. Plus the trick the chip uses to know where to start every single time it wakes up.
+tags: ['cpu', '6502', 'rom', 'memory', 'reset', 'boot']
+---
+
+import AddressMap from '../../../components/learn/AddressMap.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+End of last lesson, you watched Bill execute a 5-instruction program.
+The program counter started at `$CE00`. Meaning: the instruction
+`LDA #$05` was already sitting at memory address `$CE00` *before Bill
+ran a single cycle*. Where did it come from? How did it get there?
+And how does Bill know to *start* there?
+
+This lesson is about that. Meet Carl.
+
+## RAM forgets. ROM remembers.
+
+Here's the central idea, stated as plainly as possible:
+
+- **RAM** (the kind of memory Emily holds) is fast and writeable, but
+  it **forgets everything when the power goes off**. Plug a fresh chip
+  in, and every byte starts as random garbage. Bill can't read his
+  startup instructions out of RAM, because there's nothing in there to
+  read.
+- **ROM** (Read-Only Memory) is also a chip on the board, also
+  responds to the address bus, also drives the data bus when the CPU
+  reads from it — but its bytes are **fixed at the factory**, and they
+  *don't go away when the power's off*. Plug a ROM chip in, power up,
+  and the same bytes are sitting at the same addresses they were
+  yesterday, last year, in 1985.
+
+That's the whole concept. **RAM is a chalkboard.** **ROM is a
+photograph.** Bill's startup instructions live in ROM — that's the
+only way they could survive being unplugged.
+
+## Carl — Emily's twin
+
+Pretend ROM is a person too, named **Carl**. Carl is Emily's twin
+brother. Same family. Same set of skills — both of them know how to
+listen to the address bus, recognize when an address belongs to them,
+and put a byte on the data bus.
+
+The big difference: **Carl only listens for read requests**. If Bill
+sets `R/W` to *write* and tries to push a byte at Carl, Carl just
+shrugs. He's not built for that. The bytes inside Carl were burned in
+when his chip was manufactured (or programmed once, before being
+soldered to the board) and that's that.
+
+Why have something so inflexible? Because *fixed* and *permanent* are
+exactly what you want for the startup code. The very first instruction
+the CPU executes after power-on cannot live in something that forgets.
+
+## Where everyone lives
+
+Each chip on the board is wired to respond to a specific range of
+addresses. Together they form a **memory map** — a layout of the 64
+KB the 6502 can address (`$0000` to `$FFFF`). A typical 6502 system
+looks roughly like this:
+
+<AddressMap highlight="$FFFC" highlightLabel="RESET vector — where Bill looks first" />
+
+Three different chips, three different jobs, all sharing the same
+address bus and data bus. The CPU doesn't know or care which one is
+on the other end of any given read or write — it just sets an address
+and lets the *board* decide who responds. That's the whole reason we
+have a "memory map": each chip's address-decoder logic is wired to
+say "yes, that's me" only when its address range comes up.
+
+(Martha — the I/O region in the middle — gets her own lesson next.
+She's the family member who deals with the outside world.)
+
+## The RESET vector — Bill's first move every single time
+
+Now here's the slick part. The 6502 has *one* hardcoded behavior, and
+it's exactly the one needed to bootstrap every other behavior:
+
+> **On power-up (or when the RESET pin is pulsed), the CPU reads two
+> bytes from a fixed pair of addresses: `$FFFC` and `$FFFD`. Those two
+> bytes form a 16-bit address. The CPU loads that address into PC and
+> starts executing.**
+
+That pair of bytes is called the **RESET vector**.
+
+`$FFFC` and `$FFFD` are the *next-to-last* two bytes of the address
+space — and look at the map above: that range is in *Carl*. ROM. So
+when the CPU wakes up, it asks Carl "what address should I start
+at?", and Carl hands him the answer. That answer is whatever the
+person who *programmed Carl* decided to put there.
+
+If you write `$00 $CE` into your ROM at addresses `$FFFC` and `$FFFD`
+(low byte first, that's the 6502 convention), the CPU will start
+execution at `$CE00`. That's exactly what happened in lesson 2. The
+program counter wasn't magically `$CE00` — it was `$CE00` because
+Carl told Bill it should be.
+
+Notice that the entry address (`$CE00`) doesn't have to be the very
+*start* of Carl's territory (`$C000`). Carl's ROM region runs from
+`$C000` all the way up to `$FFFF` — 16 KB of fixed bytes — and the
+entry point can sit anywhere inside that range. Real systems usually
+have the first chunk of ROM reserved for setup tables, character
+fonts, ASCII strings, or other data, with the actual code entry
+somewhere further in. The RESET vector is just a forwarding address;
+it points wherever the programmer wanted execution to begin.
+
+The five-step boot sequence in slow motion:
+
+1. **Power applied.** Voltage rises on every chip on the board.
+2. **CPU reads `$FFFC`.** Same bus traffic we watched Emily handle in
+   lesson 1, except this time it's Carl on the other end. Carl puts
+   the low byte of the start address (`$00`) on the data lines.
+3. **CPU reads `$FFFD`.** Carl puts the high byte (`$CE`).
+4. **CPU forms `$CE00`** by combining the two bytes (`high << 8 | low`).
+5. **CPU loads `PC := $CE00`** and executes the first instruction.
+
+After that, normal program execution. The same `LDA` / `ADC` / `STA`
+rhythm we already saw. The RESET vector did exactly one job: it told
+Bill where to begin.
+
+<Callout title="Why two bytes for the address?" variant="why">
+Because the 6502's address bus is **16 bits wide** (lesson 2's "word")
+and one byte holds only 8. So the start address has to be split into
+*low* and *high* halves and read in two separate cycles. The 6502
+reads `$FFFC` first (low byte) and `$FFFD` second (high byte). This
+ordering — low byte at the lower address — is called **little-endian**,
+and you'll see it again everywhere: when you push a 16-bit value onto
+the stack, when an instruction encodes a 16-bit operand, when a JMP
+reads its target. Always: low byte first.
+</Callout>
+
+## The RESET button — the same trick, on demand
+
+Most 6502 systems have a physical RESET button (or pin) wired to the
+CPU's `RESET` line. Pressing it has *exactly the same effect* as
+power-on, except the rest of the chips on the board (Emily, the I/O
+controllers) keep whatever state they had.
+
+Bill, when reset:
+- Doesn't care what he was doing.
+- Doesn't save it. Doesn't apologize.
+- Reads `$FFFC` and `$FFFD` again.
+- Jumps wherever Carl now points.
+
+This is why pressing reset on a stuck Apple II or Commodore 64 reboots
+*the program* but doesn't necessarily wipe RAM — the variables you
+were working on might still be there in Emily, but the *code path* is
+back at the very beginning.
+
+It's also why ROM-based systems are so reliable. There is no software
+state inside Bill that can prevent him from rebooting cleanly. Pull
+his attention via the RESET pin and he *has* to start over from
+`$FFFC`. No matter how broken the program got, the bootstrap path is
+hard-wired into the silicon.
+
+## What about modern computers?
+
+Same idea, dressed up. Your laptop has:
+
+- A small ROM (today usually called **firmware** or **UEFI**) that
+  runs first.
+- A "reset vector" still exists — the address the CPU's `EIP` /
+  `RIP` (or ARM's `PC`) is set to on power-on.
+- The firmware reads more code off disk into RAM, hands control over,
+  and gets out of the way.
+
+The chain has more steps, but the shape is identical: **fixed-address
+ROM → tells the CPU where to start → CPU executes code from there →
+that code decides what comes next**. We solved this problem in 1975
+and we haven't changed the answer since.
+
+## What's next
+
+You now know where the program comes from (Carl), how the CPU finds
+it (the RESET vector), and why ROM and RAM exist as separate chips
+(forgetting vs. remembering).
+
+But Bill doesn't only talk to Carl and Emily. There's a third
+neighbor on the bus — **Martha** — and she has a job neither of them
+do: she handles the outside world. Keyboard input, button presses, an
+LED that needs blinking, a serial port, a timer that has to interrupt
+Bill *right now even though he was busy*. That's next.

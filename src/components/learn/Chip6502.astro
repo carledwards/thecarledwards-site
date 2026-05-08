@@ -1,0 +1,358 @@
+---
+// A semi-faithful DIP-40 NMOS 6502 pin diagram.
+// Color-coded by pin role: address, data, clock, control, power/misc.
+//
+// Pin numbering and labels match the original NMOS 6502 datasheet.
+
+type Kind = 'addr' | 'data' | 'clk' | 'ctrl' | 'pwr' | 'misc';
+type Pin = { pin: number; label: string; kind: Kind };
+
+const left: Pin[] = [
+  { pin: 1,  label: 'GND',  kind: 'pwr' },
+  { pin: 2,  label: 'RDY',  kind: 'misc' },
+  { pin: 3,  label: 'Φ1',   kind: 'clk' },
+  { pin: 4,  label: 'IRQ',  kind: 'ctrl' },
+  { pin: 5,  label: 'NC',   kind: 'misc' },
+  { pin: 6,  label: 'NMI',  kind: 'ctrl' },
+  { pin: 7,  label: 'SYNC', kind: 'misc' },
+  { pin: 8,  label: 'Vcc',  kind: 'pwr' },
+  { pin: 9,  label: 'A0',   kind: 'addr' },
+  { pin: 10, label: 'A1',   kind: 'addr' },
+  { pin: 11, label: 'A2',   kind: 'addr' },
+  { pin: 12, label: 'A3',   kind: 'addr' },
+  { pin: 13, label: 'A4',   kind: 'addr' },
+  { pin: 14, label: 'A5',   kind: 'addr' },
+  { pin: 15, label: 'A6',   kind: 'addr' },
+  { pin: 16, label: 'A7',   kind: 'addr' },
+  { pin: 17, label: 'A8',   kind: 'addr' },
+  { pin: 18, label: 'A9',   kind: 'addr' },
+  { pin: 19, label: 'A10',  kind: 'addr' },
+  { pin: 20, label: 'A11',  kind: 'addr' },
+];
+
+const right: Pin[] = [
+  { pin: 40, label: 'RES',  kind: 'ctrl' },
+  { pin: 39, label: 'Φ2',   kind: 'clk' },
+  { pin: 38, label: 'SO',   kind: 'misc' },
+  { pin: 37, label: 'Φ0',   kind: 'clk' },
+  { pin: 36, label: 'NC',   kind: 'misc' },
+  { pin: 35, label: 'NC',   kind: 'misc' },
+  { pin: 34, label: 'R/W',  kind: 'ctrl' },
+  { pin: 33, label: 'D0',   kind: 'data' },
+  { pin: 32, label: 'D1',   kind: 'data' },
+  { pin: 31, label: 'D2',   kind: 'data' },
+  { pin: 30, label: 'D3',   kind: 'data' },
+  { pin: 29, label: 'D4',   kind: 'data' },
+  { pin: 28, label: 'D5',   kind: 'data' },
+  { pin: 27, label: 'D6',   kind: 'data' },
+  { pin: 26, label: 'D7',   kind: 'data' },
+  { pin: 25, label: 'A15',  kind: 'addr' },
+  { pin: 24, label: 'A14',  kind: 'addr' },
+  { pin: 23, label: 'A13',  kind: 'addr' },
+  { pin: 22, label: 'A12',  kind: 'addr' },
+  { pin: 21, label: 'GND',  kind: 'pwr' },
+];
+
+const ROWS = 20;
+// SVG geometry
+const CHIP_W = 220;
+const CHIP_X = 220;          // left edge of chip body
+const TOP = 50;
+const ROW_H = 28;
+const HEIGHT = TOP + ROW_H * (ROWS + 1) + 30;
+const PIN_W = 18;
+const PIN_H = 14;
+const LABEL_PAD = 8;
+const NUM_PAD = 6;
+const NOTCH_R = 14;
+---
+
+<figure class="chip-figure not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner">
+  <figcaption class="chip-caption">
+    <span class="chip-cap-tag">6502 — DIP-40 pinout</span>
+    Each lead going off the chip is one wire we've named. Address pins
+    (sky), data pins (green), clock pins (amber), and control pins
+    (rose) are the ones we've been talking about.
+  </figcaption>
+
+  <svg
+    class="chip-svg"
+    viewBox={`0 0 660 ${HEIGHT}`}
+    role="img"
+    aria-label="Pin diagram of the 6502 CPU"
+    preserveAspectRatio="xMidYMid meet"
+  >
+    {/* chip body */}
+    <rect
+      class="chip-body"
+      x={CHIP_X}
+      y={TOP - 10}
+      width={CHIP_W}
+      height={ROW_H * ROWS + 20}
+      rx="6"
+    />
+    {/* notch at top center of chip body */}
+    <path
+      class="chip-notch"
+      d={`M ${CHIP_X + CHIP_W / 2 - NOTCH_R} ${TOP - 10} a ${NOTCH_R} ${NOTCH_R} 0 0 0 ${NOTCH_R * 2} 0`}
+    />
+    {/* dot indicating pin 1 location */}
+    <circle
+      class="chip-dot"
+      cx={CHIP_X + 14}
+      cy={TOP + 4}
+      r="3"
+    />
+
+    {/* chip label */}
+    <text
+      class="chip-label"
+      x={CHIP_X + CHIP_W / 2}
+      y={TOP + (ROW_H * ROWS) / 2 - 8}
+      text-anchor="middle"
+    >
+      6502
+    </text>
+    <text
+      class="chip-sublabel"
+      x={CHIP_X + CHIP_W / 2}
+      y={TOP + (ROW_H * ROWS) / 2 + 14}
+      text-anchor="middle"
+    >
+      MOS Technology
+    </text>
+
+    {/* left-side pins (1..20) */}
+    {left.map((p, i) => {
+      const cy = TOP + i * ROW_H + ROW_H / 2;
+      const pinX = CHIP_X - PIN_W;
+      return (
+        <g class="pin" data-kind={p.kind}>
+          <rect
+            class="pin-lead"
+            x={pinX}
+            y={cy - PIN_H / 2}
+            width={PIN_W}
+            height={PIN_H}
+            rx="2"
+          />
+          <text
+            class="pin-num"
+            x={CHIP_X + NUM_PAD}
+            y={cy + 4}
+          >
+            {p.pin}
+          </text>
+          <text
+            class="pin-label"
+            x={pinX - LABEL_PAD}
+            y={cy + 4}
+            text-anchor="end"
+          >
+            {p.label}
+          </text>
+        </g>
+      );
+    })}
+
+    {/* right-side pins (40..21) */}
+    {right.map((p, i) => {
+      const cy = TOP + i * ROW_H + ROW_H / 2;
+      const pinX = CHIP_X + CHIP_W;
+      return (
+        <g class="pin" data-kind={p.kind}>
+          <rect
+            class="pin-lead"
+            x={pinX}
+            y={cy - PIN_H / 2}
+            width={PIN_W}
+            height={PIN_H}
+            rx="2"
+          />
+          <text
+            class="pin-num"
+            x={CHIP_X + CHIP_W - NUM_PAD}
+            y={cy + 4}
+            text-anchor="end"
+          >
+            {p.pin}
+          </text>
+          <text
+            class="pin-label"
+            x={pinX + PIN_W + LABEL_PAD}
+            y={cy + 4}
+          >
+            {p.label}
+          </text>
+        </g>
+      );
+    })}
+  </svg>
+
+  <div class="chip-legend">
+    <div class="leg-item" data-kind="addr">
+      <span class="leg-swatch"></span><span class="leg-text">Address (A0–A15) — 16 wires saying <em>where</em></span>
+    </div>
+    <div class="leg-item" data-kind="data">
+      <span class="leg-swatch"></span><span class="leg-text">Data (D0–D7) — 8 wires saying <em>what</em></span>
+    </div>
+    <div class="leg-item" data-kind="clk">
+      <span class="leg-swatch"></span><span class="leg-text">Clock (Φ0 in, Φ1/Φ2 out) — Kelly's heartbeat</span>
+    </div>
+    <div class="leg-item" data-kind="ctrl">
+      <span class="leg-swatch"></span><span class="leg-text">Control (R/W, IRQ, NMI, RES) — coordination</span>
+    </div>
+    <div class="leg-item" data-kind="pwr">
+      <span class="leg-swatch"></span><span class="leg-text">Power & misc — keep the chip alive</span>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .chip-figure .chip-caption {
+    font-family: theme('fontFamily.sans');
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: theme('colors.ink.300');
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid theme('colors.ink.700');
+  }
+  .chip-figure .chip-cap-tag {
+    display: inline-block;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: theme('colors.ink.400');
+    margin-right: 0.5rem;
+    font-weight: 600;
+  }
+
+  .chip-figure .chip-svg {
+    display: block;
+    width: 100%;
+    max-width: 540px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .chip-figure .chip-body {
+    fill: #0a0c10;
+    stroke: theme('colors.ink.500');
+    stroke-width: 1;
+  }
+  .chip-figure .chip-notch {
+    fill: theme('colors.ink.800');
+    stroke: theme('colors.ink.500');
+    stroke-width: 1;
+  }
+  .chip-figure .chip-dot {
+    fill: theme('colors.ink.500');
+  }
+  .chip-figure .chip-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 22px;
+    font-weight: 700;
+    fill: theme('colors.ink.200');
+    letter-spacing: 0.1em;
+  }
+  .chip-figure .chip-sublabel {
+    font-family: theme('fontFamily.mono');
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    fill: theme('colors.ink.500');
+  }
+
+  .chip-figure .pin-num {
+    font-family: theme('fontFamily.mono');
+    font-size: 8px;
+    fill: theme('colors.ink.500');
+  }
+  .chip-figure .pin-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 11px;
+    font-weight: 600;
+    fill: theme('colors.ink.300');
+  }
+
+  .chip-figure .pin-lead {
+    stroke: theme('colors.ink.700');
+    stroke-width: 1;
+  }
+
+  /* Color by pin kind */
+  .chip-figure .pin[data-kind='addr'] .pin-lead {
+    fill: rgba(56, 189, 248, 0.85);
+    stroke: theme('colors.sky.400');
+  }
+  .chip-figure .pin[data-kind='addr'] .pin-label {
+    fill: theme('colors.sky.300');
+  }
+  .chip-figure .pin[data-kind='data'] .pin-lead {
+    fill: rgba(126, 231, 135, 0.8);
+    stroke: theme('colors.accent.DEFAULT');
+  }
+  .chip-figure .pin[data-kind='data'] .pin-label {
+    fill: theme('colors.accent.DEFAULT');
+  }
+  .chip-figure .pin[data-kind='clk'] .pin-lead {
+    fill: rgba(252, 211, 77, 0.85);
+    stroke: theme('colors.amber.300');
+  }
+  .chip-figure .pin[data-kind='clk'] .pin-label {
+    fill: theme('colors.amber.300');
+  }
+  .chip-figure .pin[data-kind='ctrl'] .pin-lead {
+    fill: rgba(244, 63, 94, 0.85);
+    stroke: theme('colors.rose.300');
+  }
+  .chip-figure .pin[data-kind='ctrl'] .pin-label {
+    fill: theme('colors.rose.300');
+    font-weight: 700;
+  }
+  .chip-figure .pin[data-kind='pwr'] .pin-lead,
+  .chip-figure .pin[data-kind='misc'] .pin-lead {
+    fill: theme('colors.ink.700');
+  }
+  .chip-figure .pin[data-kind='pwr'] .pin-label,
+  .chip-figure .pin[data-kind='misc'] .pin-label {
+    fill: theme('colors.ink.500');
+    font-weight: 400;
+  }
+
+  .chip-figure .chip-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.5rem 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid theme('colors.ink.700');
+  }
+  .chip-figure .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.75rem;
+    color: theme('colors.ink.300');
+  }
+  .chip-figure .leg-text em {
+    color: theme('colors.ink.400');
+    font-style: italic;
+  }
+  .chip-figure .leg-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid theme('colors.ink.700');
+    flex-shrink: 0;
+  }
+  .chip-figure .leg-item[data-kind='addr'] .leg-swatch { background: rgba(56, 189, 248, 0.85); }
+  .chip-figure .leg-item[data-kind='data'] .leg-swatch { background: rgba(126, 231, 135, 0.85); }
+  .chip-figure .leg-item[data-kind='clk']  .leg-swatch { background: rgba(252, 211, 77, 0.85); }
+  .chip-figure .leg-item[data-kind='ctrl'] .leg-swatch { background: rgba(244, 63, 94, 0.85); }
+  .chip-figure .leg-item[data-kind='pwr']  .leg-swatch { background: theme('colors.ink.700'); }
+</style>

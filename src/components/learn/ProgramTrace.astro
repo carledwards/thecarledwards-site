@@ -1,0 +1,386 @@
+---
+type Reg = 'a' | 'x' | 'y' | 'pc' | 'p' | 'mem';
+
+interface Frame {
+  line: number;        // -1 = pre-execution
+  a: number;
+  x: number;
+  y: number;
+  pc: number;
+  zero: boolean;       // status flag Z (we'll keep it simple — just Z)
+  mem: number;         // value at $8000
+  changed: Reg[];
+  msg: string;
+}
+
+const program = [
+  { addr: 0xCE00, op: 'LDA #$05',  desc: 'load A with literal $05' },
+  { addr: 0xCE02, op: 'ADC #$03',  desc: 'A := A + $03 (carry assumed 0)' },
+  { addr: 0xCE04, op: 'LDX #$10',  desc: 'load X with literal $10' },
+  { addr: 0xCE06, op: 'INX',       desc: 'X := X + 1' },
+  { addr: 0xCE07, op: 'STA $8000', desc: 'store A into memory $8000' },
+];
+
+const frames: Frame[] = [
+  {
+    line: -1, a: 0x00, x: 0x00, y: 0x00, pc: 0xCE00, zero: true, mem: 0x00,
+    changed: [],
+    msg: 'Power on. PC = $CE00, all three registers zero, memory empty.',
+  },
+  {
+    line: 0, a: 0x05, x: 0x00, y: 0x00, pc: 0xCE02, zero: false, mem: 0x00,
+    changed: ['a', 'pc'],
+    msg: 'LDA #$05 — A := $05. The literal goes straight into A.',
+  },
+  {
+    line: 1, a: 0x08, x: 0x00, y: 0x00, pc: 0xCE04, zero: false, mem: 0x00,
+    changed: ['a', 'pc'],
+    msg: 'ADC #$03 — A := A + $03 = $08. Same adder you built in lesson 5.',
+  },
+  {
+    line: 2, a: 0x08, x: 0x10, y: 0x00, pc: 0xCE06, zero: false, mem: 0x00,
+    changed: ['x', 'pc'],
+    msg: 'LDX #$10 — X := $10 (decimal 16).',
+  },
+  {
+    line: 3, a: 0x08, x: 0x11, y: 0x00, pc: 0xCE07, zero: false, mem: 0x00,
+    changed: ['x', 'pc'],
+    msg: 'INX — X := X + 1 = $11. Increment lives entirely inside the chip.',
+  },
+  {
+    line: 4, a: 0x08, x: 0x11, y: 0x00, pc: 0xCE0A, zero: false, mem: 0x08,
+    changed: ['mem', 'pc'],
+    msg: 'STA $8000 — Memory[$8000] := $08. The byte in A goes out the data lines.',
+  },
+];
+
+const fmt2 = (v: number) => `$${v.toString(16).toUpperCase().padStart(2, '0')}`;
+const fmt4 = (v: number) => `$${v.toString(16).toUpperCase().padStart(4, '0')}`;
+---
+
+<div
+  class="program-trace not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner"
+  data-program-trace
+  data-frames={JSON.stringify(frames)}
+>
+  <div class="trace-header">
+    <div class="trace-msg" data-msg>{frames[0].msg}</div>
+    <button type="button" class="play-btn" data-play-pause aria-label="Pause">
+      <span data-play-label>⏸ Pause</span>
+    </button>
+  </div>
+
+  <div class="reg-row">
+    <div class="reg" data-reg="a">
+      <span class="reg-label">A</span>
+      <span class="reg-value" data-out="a">$00</span>
+    </div>
+    <div class="reg" data-reg="x">
+      <span class="reg-label">X</span>
+      <span class="reg-value" data-out="x">$00</span>
+    </div>
+    <div class="reg" data-reg="y">
+      <span class="reg-label">Y</span>
+      <span class="reg-value" data-out="y">$00</span>
+    </div>
+    <div class="reg reg-pc" data-reg="pc">
+      <span class="reg-label">PC</span>
+      <span class="reg-value" data-out="pc">$CE00</span>
+    </div>
+    <div class="reg reg-mem" data-reg="mem">
+      <span class="reg-label">M[$8000]</span>
+      <span class="reg-value" data-out="mem">$00</span>
+    </div>
+  </div>
+
+  <div class="program-section">
+    <div class="program-label">Program</div>
+    <ol class="program-list">
+      {program.map((line, i) => (
+        <li class="program-line" data-line={i}>
+          <span class="line-marker">►</span>
+          <span class="line-addr">{fmt4(line.addr)}</span>
+          <span class="line-op">{line.op}</span>
+          <span class="line-desc">{line.desc}</span>
+        </li>
+      ))}
+    </ol>
+  </div>
+</div>
+
+<style>
+  .program-trace {
+    --accent: theme('colors.accent.DEFAULT');
+    --sky: theme('colors.sky.300');
+    --amber: theme('colors.amber.300');
+    --rose: theme('colors.rose.300');
+    --ink-700: theme('colors.ink.700');
+    --ink-800: theme('colors.ink.800');
+    --ink-900: theme('colors.ink.900');
+    --ink-300: theme('colors.ink.300');
+    --ink-400: theme('colors.ink.400');
+    --ink-500: theme('colors.ink.500');
+    container-type: inline-size;
+  }
+
+  .program-trace .trace-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--ink-700);
+  }
+  .program-trace .trace-msg {
+    flex: 1;
+    font-family: theme('fontFamily.sans');
+    font-size: 1rem;
+    line-height: 1.5;
+    color: theme('colors.ink.100');
+    min-height: 2.4rem;
+  }
+  .program-trace .play-btn {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: theme('colors.ink.200');
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--ink-700);
+    border-radius: 6px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    min-width: 5.5rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .program-trace .play-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .program-trace .reg-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  @container (max-width: 640px) {
+    .program-trace .reg-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .program-trace .reg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--ink-700);
+    border-radius: 6px;
+    transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+  }
+  .program-trace .reg-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-500);
+  }
+  .program-trace .reg-value {
+    font-family: theme('fontFamily.mono');
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+  }
+  .program-trace .reg-pc .reg-value {
+    color: var(--sky);
+    font-size: 0.95rem;
+  }
+  .program-trace .reg-mem .reg-value {
+    color: var(--amber);
+  }
+  .program-trace .reg[data-changed='true'] {
+    border-color: var(--accent);
+    background: rgba(126, 231, 135, 0.18);
+    box-shadow: 0 0 10px rgba(126, 231, 135, 0.35);
+  }
+
+  .program-trace .program-section {
+    margin-top: 0.5rem;
+  }
+  .program-trace .program-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-400);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .program-trace .program-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--ink-700);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .program-trace .program-line {
+    display: grid;
+    grid-template-columns: 1.25rem 4rem 7.5rem 1fr;
+    gap: 0.75rem;
+    padding: 6px 12px;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.85rem;
+    border-bottom: 1px solid theme('colors.ink.800');
+    align-items: baseline;
+    transition: background 0.2s;
+  }
+  .program-trace .program-line:last-child {
+    border-bottom: none;
+  }
+  .program-trace .line-marker {
+    color: transparent;
+    font-weight: 700;
+  }
+  .program-trace .program-line[data-active='true'] {
+    background: rgba(126, 231, 135, 0.12);
+  }
+  .program-trace .program-line[data-active='true'] .line-marker {
+    color: var(--accent);
+  }
+  .program-trace .line-addr {
+    color: var(--ink-500);
+    font-variant-numeric: tabular-nums;
+  }
+  .program-trace .line-op {
+    color: theme('colors.ink.100');
+    font-weight: 600;
+  }
+  .program-trace .line-desc {
+    color: var(--ink-400);
+    font-size: 0.78rem;
+  }
+  @container (max-width: 640px) {
+    .program-trace .program-line {
+      grid-template-columns: 1.25rem 3.5rem 1fr;
+    }
+    .program-trace .line-desc {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  type Reg = 'a' | 'x' | 'y' | 'pc' | 'p' | 'mem';
+  interface Frame {
+    line: number;
+    a: number; x: number; y: number; pc: number;
+    zero: boolean; mem: number;
+    changed: Reg[];
+    msg: string;
+  }
+
+  const STEP_MS = 2000;
+
+  const wireProgramTrace = (root: HTMLElement) => {
+    if (root.dataset.wired === '1') return;
+    root.dataset.wired = '1';
+
+    let frames: Frame[] = [];
+    try {
+      frames = JSON.parse(root.dataset.frames ?? '[]');
+    } catch {
+      frames = [];
+    }
+    if (frames.length === 0) return;
+
+    const fmt2 = (v: number) => `$${v.toString(16).toUpperCase().padStart(2, '0')}`;
+    const fmt4 = (v: number) => `$${v.toString(16).toUpperCase().padStart(4, '0')}`;
+
+    const out = {
+      a: root.querySelector<HTMLElement>('[data-out="a"]'),
+      x: root.querySelector<HTMLElement>('[data-out="x"]'),
+      y: root.querySelector<HTMLElement>('[data-out="y"]'),
+      pc: root.querySelector<HTMLElement>('[data-out="pc"]'),
+      mem: root.querySelector<HTMLElement>('[data-out="mem"]'),
+    };
+    const regs = {
+      a: root.querySelector<HTMLElement>('[data-reg="a"]'),
+      x: root.querySelector<HTMLElement>('[data-reg="x"]'),
+      y: root.querySelector<HTMLElement>('[data-reg="y"]'),
+      pc: root.querySelector<HTMLElement>('[data-reg="pc"]'),
+      mem: root.querySelector<HTMLElement>('[data-reg="mem"]'),
+    };
+    const lines = Array.from(root.querySelectorAll<HTMLElement>('.program-line'));
+    const msg = root.querySelector<HTMLElement>('[data-msg]');
+
+    const showFrame = (i: number) => {
+      const f = frames[i];
+      if (!f) return;
+      if (out.a) out.a.textContent = fmt2(f.a);
+      if (out.x) out.x.textContent = fmt2(f.x);
+      if (out.y) out.y.textContent = fmt2(f.y);
+      if (out.pc) out.pc.textContent = fmt4(f.pc);
+      if (out.mem) out.mem.textContent = fmt2(f.mem);
+
+      for (const r of Object.values(regs)) r?.removeAttribute('data-changed');
+      for (const c of f.changed) {
+        const el = (regs as Record<string, HTMLElement | null>)[c];
+        if (el) el.dataset.changed = 'true';
+      }
+
+      for (const ln of lines) ln.removeAttribute('data-active');
+      if (f.line >= 0 && lines[f.line]) lines[f.line].dataset.active = 'true';
+
+      if (msg) msg.textContent = f.msg;
+    };
+
+    let frameIdx = 0;
+    let paused = false;
+
+    showFrame(0);
+    frameIdx = 1;
+
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-play-pause]');
+    const playLabel = root.querySelector<HTMLElement>('[data-play-label]');
+    const updateBtn = () => {
+      if (playLabel) playLabel.textContent = paused ? '▶ Play' : '⏸ Pause';
+      playBtn?.setAttribute('aria-label', paused ? 'Play' : 'Pause');
+    };
+    playBtn?.addEventListener('click', () => {
+      paused = !paused;
+      updateBtn();
+    });
+    updateBtn();
+
+    // Pause when offscreen
+    const obs = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        (e.target as HTMLElement).dataset.visible = e.isIntersecting ? '1' : '0';
+      }
+    });
+    obs.observe(root);
+
+    window.setInterval(() => {
+      if (paused) return;
+      if (root.dataset.visible === '0') return;
+      showFrame(frameIdx);
+      frameIdx = (frameIdx + 1) % frames.length;
+    }, STEP_MS);
+  };
+
+  const init = () => {
+    document.querySelectorAll<HTMLElement>('[data-program-trace]').forEach(wireProgramTrace);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

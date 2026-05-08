@@ -1,0 +1,213 @@
+---
+title: The CPU's pockets — A, X, Y, P, PC, SP
+series: computer
+seriesTitle: How a computer works
+order: 2
+summary: Bill keeps a small handful of bytes inside himself — way faster to reach than going out to memory. Meet his six pockets — three for working values (A, X, Y) and three for bookkeeping (P, PC, SP) — then watch a small program use them.
+tags: ['cpu', '6502', 'registers', 'instructions']
+---
+
+import ProgramTrace from '../../../components/learn/ProgramTrace.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+Last lesson Bill (the CPU) read and wrote bytes to Emily (memory) over a
+small handful of wires. We snuck in one detail that's worth coming back
+to: there was a chip labeled **A** inside Bill, holding the byte he was
+about to send out — or had just received. That `A` is a **register**.
+
+This lesson is about Bill's pockets. The 6502 has three useful ones for
+holding bytes (`A`, `X`, `Y`), plus a couple of bookkeeping pockets
+(`PC`, `SP`, `P`) that the chip uses to keep track of itself.
+
+<Callout title="A note about specifics" variant="aside">
+This lesson is specifically about the **6502**. Every CPU you've ever
+heard of has the same *kinds* of things — registers for fast working
+storage, a status register for flags, a program counter, a stack
+pointer. The names are sometimes even similar: x86 has `AX` / `BX` /
+`CX` / `DX`. ARM has `r0` through `r15`. RISC-V has `x0` through
+`x31`. The *concepts* carry over to every chip you'll ever meet; the
+*details* (how many registers, what each one is allowed to do, which
+flags exist) are different on every CPU.
+
+Treat the 6502 as the model. It's small enough to learn in one
+sitting. Once you've internalized the shape, scaling up to a modern
+CPU is mostly "more of everything."
+</Callout>
+
+## Why have registers at all?
+
+Operations on registers happen *inside* the chip. Operations on
+memory have to go out over the bus we built in lesson 1, which costs
+the CPU extra clock ticks every single time.
+
+The 6502 is a great place to see this. Compare three instructions that
+do roughly the same kind of work:
+
+- `LDA #$05` — load A with a literal. **2 clock cycles.**
+- `LDA $8000` — load A from memory. **4 clock cycles.**
+- `INC $8000` — increment a memory cell directly. **6 clock cycles.**
+
+Doing the same `+1` on a register (`INX`) is **2 cycles**. The
+register version is *three times faster* than touching memory, doing
+the exact same arithmetic. Multiply that across thousands of
+operations and the shape of every fast 6502 program becomes obvious:
+**load values into registers, do as much work as possible in
+registers, then store the final result back out.** Less bus traffic,
+fewer clock ticks, faster program. That's the main reason registers
+exist at all — they buy you speed by keeping work off the bus.
+
+## A — the accumulator
+
+`A` is the workhorse. When the 6502 does arithmetic — *any* arithmetic
+— one of the inputs is `A` and the result lands back in `A`. When you
+add, subtract, AND, OR, or XOR two bytes, one of them came from `A` and
+the answer overwrites `A`.
+
+This is why `A` got its name: it *accumulates* results. Operations
+*through* it more than they operate *on* it.
+
+A handful of instructions exist purely to feed `A` and read `A`:
+
+- `LDA #$05` — **L**oa**D** **A** with the literal byte `$05`.
+- `LDA $8000` — `LDA`, but pull the byte from memory location `$8000`.
+- `STA $8000` — **ST**ore **A** into memory `$8000`. The opposite move.
+- `ADC #$03` — **A**d**D** with **C**arry: `A := A + $03 + carry`.
+
+Read those four out loud once. `LDA … STA …` is the rhythm of *every*
+6502 program ever written. **Load** something into `A`, **operate** on
+it, **store** it back. Over and over.
+
+## X and Y — the index registers
+
+`X` and `Y` are also one-byte registers, but they have a different
+specialty: they're **index registers**. Their main job is to count and
+to point.
+
+The most obvious use is loops. Set `X` to `5`, do something, decrement
+`X`, repeat until `X` hits zero. The 6502 has dedicated instructions
+for that — `INX` (X := X+1), `DEX` (X := X-1), `INY`, `DEY` — that
+operate *only* on those registers, faster than the generic add/subtract
+through `A`.
+
+The cooler use is **indexed addressing**. An instruction like:
+
+```
+LDA $8000,X
+```
+
+reads the byte at address `$8000 + X`. Set `X` to `0`, you get
+`Memory[$8000]`. Set `X` to `1`, you get `Memory[$8001]`. Walk `X` from
+`0` up to some count and you've just iterated through a chunk of memory
+without doing the address arithmetic by hand. Same trick exists with `Y`.
+
+`X` and `Y` aren't *quite* interchangeable — some instructions only
+take one or the other — but think of them as "pocket counters" for now.
+
+## P — the status register (flags)
+
+There's a separate register called `P` (the **P**rocessor status
+register) that nobody ever loads or stores directly. It's eight tiny
+flags, each just one bit, that get set automatically by the *previous*
+operation:
+
+- **Z** (zero) — was the result of the last operation `0`?
+- **N** (negative) — was the high bit of the result a `1` (i.e., the
+  signed interpretation was negative)?
+- **C** (carry) — did an add carry out, or a subtract borrow? Same
+  carry from lesson 5.
+- **V** (overflow) — did a *signed* operation overflow?
+- Plus a few we'll defer (B, D, I).
+
+Why does this matter? Because the *only* way the CPU makes a decision
+is by checking these flags.
+
+```
+DEX           ; X := X - 1, sets Z if X is now 0
+BNE loop      ; Branch if Not Equal (Z=0) → jump back to "loop"
+```
+
+The branch instruction looks at `Z` from the previous `DEX` and decides
+whether to keep looping. Without flags, the chip can only run straight
+through code. With flags, it can choose. Every `if`, every `while`,
+every `for` you've ever written compiles down to this dance.
+
+## PC — the program counter
+
+`PC` isn't a working register. It's the chip's bookmark — a 16-bit
+address holding *the next instruction to execute*. Every instruction
+the CPU runs, it advances `PC` past that instruction so it knows where
+to go next. Branches and jumps work by *setting* `PC` to a new value.
+
+You'll see it tick in the trace below. Most of the time it just walks
+forward; the moment it stops being predictable is exactly the moment
+the program made a decision.
+
+## SP — the stack pointer
+
+The 6502 has a tiny built-in **stack** for saving and restoring values
+during subroutine calls. `SP` (the stack pointer) is the 8-bit address
+of the top of that stack. We'll meet it properly when we cover
+subroutines — for now, just know there's one more pocket Bill keeps for
+bookkeeping.
+
+## Watch a program run
+
+Here's a five-instruction 6502 program. The trace shows registers and
+the one memory cell at `$8000`. The currently-executing instruction is
+highlighted with a `►` marker. Each tick advances one instruction;
+press **Pause** to read at your own pace.
+
+<ProgramTrace />
+
+Things to notice as you watch:
+
+- **`PC` advances every instruction.** It steps forward by `2` for the
+  immediate-mode instructions (the opcode + the literal byte), `1` for
+  the implied ones like `INX`, and `3` for the absolute-mode `STA`.
+  That's the size of each instruction in bytes. Different instructions
+  take different amounts of program memory.
+- **`A` lights up after `LDA` and `ADC`.** It's the accumulator earning
+  its name.
+- **`X` lights up after `LDX` and `INX`.** Y stays untouched the whole
+  time — the registers really are independent.
+- **The memory cell stays empty until the very last instruction,
+  `STA`.** Everything before that happens entirely *inside* the chip.
+  No bus traffic. No wires moving. That's the load/operate part of
+  load/operate/store. The single bus transaction is the store.
+
+This is the pattern. **A real CPU spends most of its time pushing
+bytes around inside its own pockets**, then occasionally talks to
+memory to either pull more in or push results out. The bus you watched
+in lesson 1 is busy, but a *lot* of work happens between bus
+transactions.
+
+<Callout title="Why have so few registers?" variant="why">
+Modern CPUs have dozens of registers — sometimes hundreds, depending
+on how you count. The 6502 has six, total. Why?
+
+Two reasons. **First, transistors were expensive in 1975** — every
+register costs silicon. Three working registers + three bookkeeping
+ones was the sweet spot for the chip's price target.
+
+**Second, the 6502 makes up for it with fast memory access**. Unlike
+most CPUs of its era, the first 256 bytes of memory (the "zero page")
+are reachable in fewer cycles than ordinary memory. So instead of
+giving you 32 registers, the 6502 gives you 256 *almost-registers*
+sitting just off-chip. The trick worked well enough that the chip
+ended up everywhere.
+
+We'll meet the zero page when we cover addressing modes. For now, just
+know: the 6502 isn't crippled by having three registers — it's
+designed around it.
+</Callout>
+
+## What's next
+
+Now you know what the CPU's pockets are and how it shuffles bytes
+between them. But where did the program *come from*? When Bill powered
+on a moment ago, `PC` was already pointing at `$CE00` — and somehow
+the right bytes were already sitting there, waiting.
+
+Next lesson: meet **Carl**. Emily's twin brother. He holds the
+program, sits at fixed addresses Bill knows by heart, and is the very
+first thing Bill talks to when the system wakes up.

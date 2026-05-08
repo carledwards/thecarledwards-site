@@ -19,28 +19,41 @@ const fmtHex = (v: number) => v.toString(16).toUpperCase().padStart(hexWidth, '0
   data-value={initial}
   style="container-type: inline-size;"
 >
-  {label && <div class="text-mono-tag mb-3">{label}</div>}
+  {label && <div class="panel-title mb-4">{label}</div>}
+
+  <div class="operand operand-bit">
+    <div class="op-tag bit-row-tag">Bit</div>
+    <div class="led-row">
+      {indices.map((i, n) => (
+        <>
+          {n === 4 && <div></div>}
+          <div class="bit-num">{i}</div>
+        </>
+      ))}
+    </div>
+    <div></div>
+  </div>
 
   <div class="operand">
     <div class="op-tag">V</div>
     <div class="led-row">
-      {indices.map((i) => {
-        const on = ((initial >> i) & 1) === 1;
-        return (
+      {indices.map((i, n) => (
+        <>
+          {n === 4 && <div></div>}
           <button
             type="button"
             class="bit"
             data-bit={i}
-            data-on={on ? 'true' : 'false'}
-            aria-pressed={on ? 'true' : 'false'}
-            aria-label={`Bit ${i}, ${on ? 'on' : 'off'}`}
+            data-on={((initial >> i) & 1) === 1 ? 'true' : 'false'}
+            aria-pressed={((initial >> i) & 1) === 1 ? 'true' : 'false'}
+            aria-label={`Bit ${i}, ${((initial >> i) & 1) === 1 ? 'on' : 'off'}`}
           >
             <span class="led-bezel">
               <span class="led"></span>
             </span>
           </button>
-        );
-      })}
+        </>
+      ))}
     </div>
     <div class="readout">
       <span class="r-bin">%<span data-out="bin">{fmtBin(initial)}</span></span>
@@ -77,7 +90,7 @@ const fmtHex = (v: number) => v.toString(16).toUpperCase().padStart(hexWidth, '0
 <style>
   .bitshift .operand {
     display: grid;
-    grid-template-columns: 2rem 1fr auto;
+    grid-template-columns: 2rem 1fr minmax(6rem, auto);
     align-items: center;
     column-gap: 0.75rem;
   }
@@ -87,6 +100,23 @@ const fmtHex = (v: number) => v.toString(16).toUpperCase().padStart(hexWidth, '0
     font-weight: 700;
     color: theme('colors.ink.300');
     text-align: center;
+  }
+  .bitshift .bit-row-tag {
+    color: theme('colors.ink.400');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+  }
+  .bitshift .bit-num {
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    color: theme('colors.ink.400');
+    text-align: center;
+  }
+  .bitshift .operand-bit {
+    margin-bottom: 0.25rem;
   }
   .bitshift .led-row {
     display: grid;

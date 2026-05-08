@@ -141,6 +141,59 @@ const fmt = (d: Date) =>
   </section>
 
   <section class="container-wide py-12 border-t border-ink-800/80">
+    <div class="rounded-xl border border-accent/40 bg-ink-900 p-8 sm:p-10 relative overflow-hidden">
+      <div class="absolute inset-0 grid-bg opacity-30 pointer-events-none"></div>
+      <div class="relative">
+        <div class="text-mono-tag mb-4 text-accent">New — interactive lessons</div>
+        <h2 class="text-3xl sm:text-4xl font-semibold text-ink-100 tracking-tight max-w-2xl">
+          From bits to a real machine.
+        </h2>
+        <p class="mt-4 text-ink-300 leading-relaxed max-w-2xl">
+          A hands-on series that builds up the smallest useful model of a
+          computer — starting from a single bit and ending with a working
+          8-bit CPU running real code. Click things, watch them change,
+          build intuition. Friendly even if you've never written code.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="/learn/" class="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-accent-dim">
+            Browse the lessons
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="/learn/binary/01-bits-and-bytes/" class="inline-flex items-center gap-2 rounded-md border border-ink-700 px-4 py-2.5 text-sm text-ink-200 hover:border-accent hover:text-accent">
+            Start with bits
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <div class="mt-8 grid gap-3 sm:grid-cols-2">
+          <a
+            href="/learn/#binary"
+            class="group rounded-md border border-ink-800 bg-ink-900/60 p-4 hover:border-accent/60 hover:bg-ink-800/40"
+          >
+            <div class="text-mono-tag mb-1">Series 1 · 5 lessons</div>
+            <div class="text-ink-100 font-semibold group-hover:text-accent">Binary, by hand</div>
+            <p class="mt-2 text-sm text-ink-400 leading-relaxed">
+              Bits → bytes → arithmetic → shifts. Click LEDs and watch
+              math become visible.
+            </p>
+          </a>
+          <a
+            href="/learn/#computer"
+            class="group rounded-md border border-ink-800 bg-ink-900/60 p-4 hover:border-accent/60 hover:bg-ink-800/40"
+          >
+            <div class="text-mono-tag mb-1">Series 2 · 7 lessons</div>
+            <div class="text-ink-100 font-semibold group-hover:text-accent">How a computer works</div>
+            <p class="mt-2 text-sm text-ink-400 leading-relaxed">
+              Bill, Carl, Emily, Kelly, Martha, Karen, Kathy. The 6502
+              family from the inside.
+            </p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-wide py-12 border-t border-ink-800/80">
     <div class="flex items-baseline justify-between mb-10">
       <div>
         <div class="text-mono-tag mb-4">Selected Work</div>

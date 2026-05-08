@@ -1,0 +1,338 @@
+---
+title: Talking to the world — meet Martha
+series: computer
+seriesTitle: How a computer works
+order: 4
+summary: A computer that only talks to itself isn't very useful. Meet Martha — Bill's I/O liaison. She's how the keyboard, the LED on the front panel, the timer chip, and a thousand other things get onto Bill's bus. Plus the trick that lets her pull Bill's attention right when she needs to.
+tags: ['cpu', '6502', 'io', 'interrupts', 'irq']
+---
+
+import AddressMap from '../../../components/learn/AddressMap.astro';
+import InterruptTimeline from '../../../components/learn/InterruptTimeline.astro';
+import Chip6502 from '../../../components/learn/Chip6502.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+You now have Bill, Carl, Emily, and Kelly. The CPU runs programs, ROM
+remembers them, RAM holds the working values, the clock keeps everyone
+on the beat. That's a complete *self-contained* computer.
+
+But a computer that doesn't talk to anything outside itself is a
+beautiful, sealed black box that nobody can tell anything to or get
+anything out of. There has to be one more family member: the one who
+deals with the *outside world*.
+
+Meet **Martha**.
+
+## Memory-mapped I/O — Martha is just on the bus
+
+Here's the surprise. Martha doesn't need a special set of wires. She
+sits on the same address bus + data bus + R/W line that Emily and
+Carl share. The CPU has *no idea* she's any different from them.
+
+When Bill runs `LDA $D012`, the chip-select decoder on the board says
+"address `$D012` belongs to Martha", Martha responds with a byte, and
+Bill stuffs it into A. From Bill's perspective, he just read a byte
+from "memory" — same `LDA` instruction, same number of cycles. From
+Martha's perspective, she just put the *current state of the keyboard*
+on the data lines. She's not actually a memory chip. She's a
+keyboard-controller chip wearing a memory-shaped costume.
+
+This trick has a name: **memory-mapped I/O**. The 6502 has no
+dedicated input/output instructions. There's no `IN` or `OUT`. There's
+just the same `LDA` and `STA` you already know, pointed at addresses
+that happen to be wired to peripherals instead of RAM.
+
+Look at the map again — the middle band is Martha:
+
+<AddressMap highlight="$FFFE" highlightLabel="IRQ vector — where Bill looks when interrupted" />
+
+Different chips on the board respond to different sub-ranges of
+Martha's territory. A keyboard controller might own `$D000`–`$D00F`.
+A timer might own `$D010`–`$D01F`. A serial port `$D020`–`$D02F`.
+Each one is a tiny chip wired to listen for *its* address range and
+respond. The 6502 doesn't know or care; the address decoder on the
+board is the part that routes the request.
+
+## Inputs — reading the world
+
+Suppose Martha owns address `$D012`, and the byte she puts there
+reflects which keyboard key is currently pressed. Reading it is just
+this:
+
+```
+LDA $D012      ; A := whichever byte Martha is showing right now
+```
+
+That's the *whole* keyboard read. Every time Bill executes that line,
+Martha looks at the keyboard pins, encodes the state, drops it on the
+data lines. If you want to keep up with the keyboard, you keep
+running that instruction.
+
+Or imagine Martha owns `$D040` and the byte at that address is "the
+current value of a free-running counter." `LDA $D040` gives you a
+high-resolution timer. `LDA $D041` reads it again — a different
+value, because time has passed.
+
+## Outputs — pushing on the world
+
+The other direction works the same way. Suppose `$D000` is wired to
+eight LEDs on the front panel, one bit per LED. Writing to it
+directly drives those LEDs:
+
+```
+LDA #%10100101   ; pattern: lights 7, 5, 2, 0 on
+STA $D000        ; M[$D000] := A → LEDs match A's bits
+```
+
+Same `STA` instruction we used to write to RAM in lesson 1. Different
+address, very different consequence: a row of physical lights changes
+state. Or a relay clicks. Or a sound chip starts playing a tone. From
+the CPU's perspective it's just a memory write. From the outside
+world's perspective it's the entire user interface.
+
+That's the deep payoff of lesson 1's "every bit is a wire" framing.
+Some of those wires don't lead to other memory cells. Some lead to
+LEDs, motors, speakers, or pins on a connector. The CPU writes a byte
+and the world *moves*.
+
+## The polling problem
+
+Here's an obvious problem. If the only way for Bill to know "did
+Martha just see a key press?" is to keep reading `$D012` over and
+over and check whether the value changed, he has to spend cycles
+*looking*. If he's busy doing something else (running a calculation,
+drawing a frame, anything) he might miss a fast event entirely.
+
+This is called **polling**. It works fine when you don't mind the
+overhead. It also wastes a lot of clock cycles asking "anything yet?
+anything yet? anything yet?" most of which come back "no."
+
+What if Martha could just… interrupt him?
+
+## A look at Bill's pins
+
+Before we get to interrupts, look at Bill physically. The 6502 is a
+40-pin chip — every "wire" we've named so far is a literal lead
+sticking out of the package. The address bus is 16 pins on Bill.
+The data bus is 8. R/W is one. The clock pins are right there. So
+are IRQ, NMI, and RESET — actual pieces of metal that another chip
+can yank on.
+
+<Chip6502 />
+
+The colors map to roles: the same sky / green / amber / rose we've
+been using everywhere else. The cluster of rose pins on the right
+side — `RES`, `R/W`, `IRQ`, `NMI` — is the control bus, and the
+last two on that list are what the rest of this lesson is about.
+
+## Interrupts — Martha pulls Bill's sleeve
+
+The **IRQ** line (Interrupt ReQuest) is the wire we just looked at.
+Like the R/W line, it's just one wire — but it goes the *other*
+direction. Peripherals use it to talk *to* the CPU, between clock
+cycles, asking for attention.
+
+The mechanism is a **limited-time subroutine** — a chunk of code Bill
+runs *because Martha asked*, not because the program planned for it.
+It comes in, does its job, gets out, and Bill picks up the main
+program exactly where he left it.
+
+## A keypress, end to end
+
+Concrete walkthrough. Someone presses a key on the keyboard:
+
+1. **Person presses a key.** Voltage on a wire physically changes.
+2. **Martha detects the change.** The keyboard controller chip sees
+   the transition and prepares a byte describing it — say `$41` for
+   the 'A' key.
+3. **Martha asserts IRQ.** She pulls Bill's IRQ pin low. (Look at
+   the chip diagram above — that's a literal pin moving.)
+4. **Bill, between instructions, notices.** Whatever he was working
+   on in the main program pauses.
+5. **Bill saves state.** Pushes `PC` and `P` onto the stack so he
+   can come back later. (Remember the stack pointer from lesson 2?
+   This is where it earns its keep.)
+6. **Bill looks up the ISR address in Carl.** He reads `$FFFE` and
+   `$FFFF` — the **IRQ vector** — same kind of "look here for the
+   address" trick as the RESET vector. These bytes live in Carl's
+   territory at the very top of memory.
+7. **Bill jumps to the ISR.** Now he's executing the keypress
+   handler instead of the main program.
+8. **The ISR reads `$D012`.** "What does Martha want?" → gets `$41`.
+9. **The ISR does the bare minimum** — drops the byte into a buffer
+   the main program will check on its own time.
+10. **`RTI`** ("ReTurn from Interrupt") pops `PC` and `P` back off
+    the stack.
+11. **Bill picks up exactly where he was**, like nothing happened.
+
+Visually:
+
+<InterruptTimeline />
+
+The main program (green) is running. Martha asserts IRQ. Bill's
+attention shifts to the ISR (rose). The ISR runs. `RTI` executes.
+Bill pops back to the main program and continues. The main program
+**doesn't have to know anything about it** — as long as the ISR
+saves and restores the registers it touches, the main program sees
+zero side effects of the visit.
+
+## The ISR has to be quick
+
+This is the part new programmers reliably get wrong, so it gets its
+own section.
+
+**Every cycle the ISR takes is a cycle the main program isn't
+getting.** And while Bill is in this ISR, three things are
+queuing up against him:
+
+- **Other IRQs.** If another peripheral asserts IRQ while you're
+  handling this one, that one waits. Stay in the ISR too long and
+  events back up.
+- **Time-critical work in the main program.** The frame you're
+  drawing, the audio sample you're feeding to a sound chip, the
+  serial bit you're shifting out — all of it is on hold.
+- **NMI** (the urgent kind we'll meet in a moment) **can still
+  fire**, and *it* takes priority over your IRQ.
+
+The temptation, when you have the keypress *right there in your
+hand*, is to do the whole job in the ISR: decode the key, look it up
+in a translation table, dispatch a command, update the screen,
+redraw the cursor — all from inside the interrupt handler. It's
+*right there*, after all. Why not?
+
+Because every microsecond you spend in the ISR is a microsecond
+stolen from whatever the main program was actually doing.
+Rendering hiccups. Audio glitches. Lost or delayed IRQs from other
+devices. The classic symptom is "the music goes weird whenever I
+hit a key" — you're stealing audio cycles to do keyboard work.
+
+The rule is simple: **read the byte, stash it somewhere the main
+program will see, return.** Let the main program handle the
+decoding, the lookups, the redraw, on its own schedule. The ISR is
+the courier, not the desk.
+
+In normal engineering terms this is called **queueing the work for
+the main loop to process** — the ISR drops the trigger into a queue
+(or buffer, or flag), and a separate piece of code consumes it on
+its own schedule. You'll see this pattern from microcontrollers all
+the way up to operating systems: the interrupt handler is a tiny
+producer; the main loop is the (relatively unhurried) consumer.
+
+## A typical ISR
+
+One quirk of the 6502 family that's worth calling out: when an IRQ
+fires, the chip **only saves `PC` and `P` automatically**. The other
+registers — `A`, `X`, `Y` — keep whatever values they had in the
+main program. Whatever the ISR touches, **the programmer is
+responsible for saving and restoring**. If the ISR modifies `A`
+without first pushing it on the stack, the main program comes back
+to a corrupted accumulator and quietly does the wrong thing.
+
+This is *not* universal. Many newer CPUs (ARM Cortex-M, x86 with
+modern OS support, etc.) push the full register set automatically
+on entry to an interrupt handler — at the cost of some cycles and
+some stack space. The 6502 keeps it minimal: it gives you the bare
+mechanism, and you decide what's worth saving. Cheap, fast, and
+your problem.
+
+Pseudocode that follows that rule:
+
+```
+service_irq:
+  PHA              ; save A on the stack
+  TXA
+  PHA              ; save X (the 6502 has no PHX; route via A)
+  TYA
+  PHA              ; save Y (same reason)
+
+  LDA $D012        ; "what's Martha got?" — read the keyboard byte
+  STA key_buffer   ; drop it where the main program will pick it up
+
+  PLA
+  TAY              ; restore Y
+  PLA
+  TAX              ; restore X
+  PLA              ; restore A
+  RTI              ; pop PC and P → resume main program
+```
+
+Push at the top, do the *minimum*, pop in reverse order, RTI. The
+push/pop dance is why we have a stack at all — it's the natural
+shape for "save several things, do something, restore them in the
+right order."
+
+(The original 6502 only has `PHA` and `PHP` natively, so X and Y
+get routed through A. Newer 6500-family chips like the 65C02 added
+`PHX` and `PHY`. Tiny detail, but a good example of how each chip
+in the family adds operations even when the *concepts* are
+identical — see the callout in lesson 2.)
+
+<Callout title="If the work doesn't fit in the ISR, what do you do?" variant="why">
+Sometimes the work genuinely is heavy — running a long calculation,
+updating a display buffer, decompressing audio. The right pattern:
+**don't do it in the ISR**. Stash the trigger somewhere the main
+program polls, and let the main program (or a dedicated task in a
+modern OS) do the heavy lift on its own schedule.
+
+In a couple of lessons we'll meet **Kathy** — Bill's spouse, a
+**co-processor**. Kathy can do real work *independently* of Bill,
+in parallel with him, and tap him on the shoulder when she's done.
+She's the right answer when "the ISR has to be quick, but the work
+has to happen *now*" — give the work to Kathy, let Bill keep
+running the main program, deal with the result whenever Kathy
+returns.
+
+For now, just remember: ISRs courier; main programs (and
+co-processors) work.
+</Callout>
+
+## NMI — the urgent kind
+
+The 6502 has *two* interrupt lines, not one. The other is **NMI**
+(Non-Maskable Interrupt), wired to its own vector at `$FFFA`–`$FFFB`.
+
+The difference:
+
+- **IRQ** is "polite." Programs can *disable* IRQs during a critical
+  section using the `SEI` instruction (Set Interrupt-disable flag in
+  P). While disabled, IRQs are queued but not serviced. The program
+  re-enables them with `CLI` when it's safe.
+- **NMI** can't be disabled. As the name says — non-maskable. When
+  the NMI line is pulsed, the CPU services it at the end of the
+  current instruction *no matter what*.
+
+NMI is reserved for "the kind of thing where dropping it would be
+catastrophic." Things like: a monitor's vertical blank pulse on the
+NES (drawing must finish before the next frame starts), or a watchdog
+timer on industrial hardware (the system has 50ms to react or it gets
+reset).
+
+For now: most peripherals get IRQ. Critical timing stuff gets NMI.
+
+## Why this matters
+
+You now have the full picture of how a computer talks to the world:
+
+- **Memory-mapped I/O** lets every peripheral pretend to be memory.
+  No special instructions needed.
+- **Polling** lets the program ask "anything new?" by re-reading
+  those addresses.
+- **Interrupts** let peripherals demand attention without the program
+  having to check.
+- **The IRQ vector** at `$FFFE`–`$FFFF` (and **NMI vector** at
+  `$FFFA`–`$FFFB`) tell Bill where to find the handler — same trick
+  as the RESET vector from lesson 3, applied to a different event.
+
+This is the seam between hardware and software. Above it: programs.
+Below it: chips and wires. The 6502 (and every CPU after it) sits
+*right* on the seam, with one foot in each.
+
+## What's next
+
+We've put bytes onto LEDs as a simple output. But "an LED on the
+front panel" is a long way from "a screen full of letters and
+graphics." The display is the most demanding peripheral on most
+systems — and on a 6502 system, it's its own kind of beast.
+
+Next lesson: meet **Karen**. She's the one who likes to show off
+what the family's been up to.

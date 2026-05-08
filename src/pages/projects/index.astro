@@ -1,5 +1,72 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectGallery from '../../components/learn/ProjectGallery.astro';
+
+const tinkering = [
+  {
+    title: 'Commodore 64 Auto-Typer',
+    description: 'A microcontroller that types a full BASIC program into a real Commodore 64, key by key, then runs it.',
+    image: 'https://raw.githubusercontent.com/carledwards/commodore-64-auto-typer/HEAD/docs/images/demo.gif',
+    href: 'https://github.com/carledwards/commodore-64-auto-typer',
+    platform: 'Microcontroller × Retro',
+  },
+  {
+    title: 'Desk Traffic Signal',
+    description: 'A small desktop traffic light driven over WiFi — useful as a "do not disturb" signal.',
+    image: 'https://raw.githubusercontent.com/carledwards/desk-traffic-signal/HEAD/images/traffic-light-operation.gif',
+    href: 'https://github.com/carledwards/desk-traffic-signal',
+    platform: 'MicroPython × WiFi',
+  },
+  {
+    title: 'Retro Rotary Phone Voice Box',
+    description: 'A vintage rotary phone converted into a playback device for keepsake voice messages.',
+    image: 'https://raw.githubusercontent.com/carledwards/retro-rotary-phone-voice-box/HEAD/images/phone.jpeg',
+    href: 'https://github.com/carledwards/retro-rotary-phone-voice-box',
+    platform: 'Embedded × Audio',
+  },
+  {
+    title: 'Panel Meter Clock',
+    description: 'An analog panel meter — tube-amp era — driven by a microcontroller to display the time.',
+    image: 'https://raw.githubusercontent.com/carledwards/panel-meter-clock/HEAD/pictures/clock_1.jpg',
+    href: 'https://github.com/carledwards/panel-meter-clock',
+    platform: 'LoPy × MicroPython',
+  },
+  {
+    title: 'LCM-32',
+    description: 'Archive of the Intrep LCM-32 — a 6502 single-board computer I helped design in the 1980s.',
+    image: 'https://raw.githubusercontent.com/carledwards/lcm-32/HEAD/images/LCM32-PCBoard-Top.png',
+    href: 'https://github.com/carledwards/lcm-32',
+    platform: '6502 × archival',
+  },
+  {
+    title: 'Christmas Gift 2019',
+    description: 'A pile of small animated displays I built as gifts — worm race, gaze-following eye, sound equalizer.',
+    image: 'https://raw.githubusercontent.com/carledwards/christmas-gift-2019/HEAD/images/gifanimation.gif',
+    href: 'https://github.com/carledwards/christmas-gift-2019',
+    platform: 'MicroPython × OLED',
+  },
+  {
+    title: 'Days Until Christmas Counter',
+    description: 'An alphanumeric LED display counting down the days until Christmas.',
+    image: 'https://raw.githubusercontent.com/carledwards/days-until-christmas-counter/HEAD/images/project.jpg',
+    href: 'https://github.com/carledwards/days-until-christmas-counter',
+    platform: 'MicroPython × Display',
+  },
+  {
+    title: 'MicroPython GIF Viewer',
+    description: 'Plays animated GIFs on a tiny OLED display, decoding the GIF format on a microcontroller frame-by-frame.',
+    image: 'https://raw.githubusercontent.com/carledwards/micropython-gif-viewer/HEAD/fuzzy.gif',
+    href: 'https://github.com/carledwards/micropython-gif-viewer',
+    platform: 'MicroPython × OLED',
+  },
+  {
+    title: 'SSID Weather',
+    description: "Broadcasts the local temperature as the *name* of a WiFi network. No app needed — open your phone's WiFi list.",
+    image: 'https://raw.githubusercontent.com/carledwards/ssid-weather/HEAD/images/project_1.png',
+    href: 'https://github.com/carledwards/ssid-weather',
+    platform: 'LoPy × WiFi',
+  },
+];
 
 type Link = { label: string; href: string };
 type Project = {
@@ -215,5 +282,21 @@ const statusColor = (s: Project['status']) =>
         </div>
       </article>
     ))}
+  </section>
+
+  <section class="container-wide pb-24">
+    <div class="text-mono-tag mb-4">Tinkering</div>
+    <h2 class="text-3xl sm:text-4xl font-semibold text-ink-100 tracking-tight">
+      Smaller things I've built.
+    </h2>
+    <p class="mt-4 max-w-2xl text-ink-300">
+      Weekend builds, embedded experiments, and small standalone hacks
+      — mostly MicroPython on ESP32-class boards, with a few retro-era
+      pieces in the mix. Each one is a working repository with notes
+      and photos.
+    </p>
+    <div class="mt-8">
+      <ProjectGallery projects={tinkering} />
+    </div>
   </section>
 </BaseLayout>

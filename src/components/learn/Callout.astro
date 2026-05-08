@@ -1,0 +1,70 @@
+---
+interface Props {
+  title?: string;
+  variant?: 'note' | 'why' | 'aside';
+}
+const { title, variant = 'note' } = Astro.props;
+---
+
+<aside class="callout not-prose my-6" data-variant={variant}>
+  {title && <div class="callout-title">{title}</div>}
+  <div class="callout-body">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .callout {
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid theme('colors.ink.700');
+    background: rgba(0, 0, 0, 0.25);
+    border-left-width: 3px;
+  }
+  .callout[data-variant='note'] {
+    border-left-color: theme('colors.sky.400');
+  }
+  .callout[data-variant='why'] {
+    border-left-color: theme('colors.amber.400');
+  }
+  .callout[data-variant='aside'] {
+    border-left-color: theme('colors.ink.500');
+  }
+  .callout .callout-title {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .callout[data-variant='note'] .callout-title {
+    color: theme('colors.sky.300');
+  }
+  .callout[data-variant='why'] .callout-title {
+    color: theme('colors.amber.300');
+  }
+  .callout[data-variant='aside'] .callout-title {
+    color: theme('colors.ink.400');
+  }
+  .callout .callout-body {
+    color: theme('colors.ink.200');
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .callout .callout-body p {
+    margin: 0.6rem 0;
+  }
+  .callout .callout-body p:first-child { margin-top: 0; }
+  .callout .callout-body p:last-child { margin-bottom: 0; }
+  .callout .callout-body code {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.95em;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  .callout .callout-body strong {
+    color: theme('colors.ink.100');
+  }
+</style>

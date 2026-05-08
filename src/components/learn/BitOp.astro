@@ -44,6 +44,9 @@ const initialCarry = initialComp.carry;
 const fmtBin = (v: number) => v.toString(2).padStart(bits, '0');
 const fmtHex = (v: number) => v.toString(16).toUpperCase().padStart(hexWidth, '0');
 const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
+
+// column for bit at display index n (0-based, 0 = leftmost = MSB)
+const colFor = (n: number) => (n < 4 ? n + 2 : n + 3);
 ---
 
 <div
@@ -53,109 +56,126 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
   data-op={op}
   style="container-type: inline-size;"
 >
-  {label && <div class="text-mono-tag mb-3">{label}</div>}
+  {label && <div class="panel-title mb-4">{label}</div>}
 
-  {/* Operand A */}
-  <div class="operand" data-row="a">
-    <div class="op-tag">A</div>
-    <div class="led-row">
-      {indices.map((i) => {
-        const on = ((initialA >> i) & 1) === 1;
-        return (
-          <button
-            type="button"
-            class="bit"
-            data-operand="a"
-            data-bit={i}
-            data-on={on ? 'true' : 'false'}
-            aria-pressed={on ? 'true' : 'false'}
-            aria-label={`A bit ${i}, ${on ? 'on' : 'off'}`}
-          >
-            <span class="led-bezel">
-              <span class="led"></span>
-            </span>
-          </button>
-        );
-      })}
-    </div>
-    <div class="readout">
+  <div class="bitop-content">
+  <div class="bit-rails-overlay" aria-hidden="true">
+    <div></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div class="rail"></div>
+    <div></div>
+  </div>
+  <div class="bitop-grid">
+    {/* BIT row */}
+    <div class="op-tag bit-row-tag">Bit</div>
+    {indices.map((i, n) => (
+      <>
+        {n === 4 && <div></div>}
+        <div class="bit-num">{i}</div>
+      </>
+    ))}
+    <div></div>
+
+    {/* A row */}
+    <div class="op-tag" data-row="a">A</div>
+    {indices.map((i, n) => (
+      <>
+        {n === 4 && <div data-row="a"></div>}
+        <button
+          type="button"
+          class="bit"
+          data-operand="a"
+          data-bit={i}
+          data-on={((initialA >> i) & 1) === 1 ? 'true' : 'false'}
+          aria-pressed={((initialA >> i) & 1) === 1 ? 'true' : 'false'}
+          aria-label={`A bit ${i}, ${((initialA >> i) & 1) === 1 ? 'on' : 'off'}`}
+        >
+          <span class="led-bezel">
+            <span class="led"></span>
+          </span>
+        </button>
+      </>
+    ))}
+    <div class="readout" data-row="a">
       <span class="r-bin">%<span data-out="a-bin">{fmtBin(initialA)}</span></span>
       <span class="r-hex">$<span data-out="a-hex">{fmtHex(initialA)}</span></span>
       <span class="r-dec" data-out="a-dec">{initialA}</span>
     </div>
-  </div>
 
-  {/* Op selector */}
-  <div class="op-selector" role="group" aria-label="Operation">
-    {ops.map((o) => (
-      <button
-        type="button"
-        class="op-pill"
-        data-op-set={o}
-        data-active={o === op ? 'true' : 'false'}
-        disabled={lockOp && o !== op}
-      >
-        {o}
-      </button>
-    ))}
-  </div>
-
-  {/* Operand B (hidden when NOT) */}
-  <div class="operand" data-row="b">
-    <div class="op-tag">B</div>
-    <div class="led-row">
-      {indices.map((i) => {
-        const on = ((initialB >> i) & 1) === 1;
-        return (
-          <button
-            type="button"
-            class="bit"
-            data-operand="b"
-            data-bit={i}
-            data-on={on ? 'true' : 'false'}
-            aria-pressed={on ? 'true' : 'false'}
-            aria-label={`B bit ${i}, ${on ? 'on' : 'off'}`}
-          >
-            <span class="led-bezel">
-              <span class="led"></span>
-            </span>
-          </button>
-        );
-      })}
+    {/* Op selector */}
+    <div class="op-selector" role="group" aria-label="Operation" style="grid-column: 1 / -1;">
+      {ops.map((o) => (
+        <button
+          type="button"
+          class="op-pill"
+          data-op-set={o}
+          data-active={o === op ? 'true' : 'false'}
+          disabled={lockOp && o !== op}
+        >
+          {o}
+        </button>
+      ))}
     </div>
-    <div class="readout">
+
+    {/* B row (hidden when NOT) */}
+    <div class="op-tag" data-row="b">B</div>
+    {indices.map((i, n) => (
+      <>
+        {n === 4 && <div data-row="b"></div>}
+        <button
+          type="button"
+          class="bit"
+          data-operand="b"
+          data-bit={i}
+          data-on={((initialB >> i) & 1) === 1 ? 'true' : 'false'}
+          aria-pressed={((initialB >> i) & 1) === 1 ? 'true' : 'false'}
+          aria-label={`B bit ${i}, ${((initialB >> i) & 1) === 1 ? 'on' : 'off'}`}
+        >
+          <span class="led-bezel">
+            <span class="led"></span>
+          </span>
+        </button>
+      </>
+    ))}
+    <div class="readout" data-row="b">
       <span class="r-bin">%<span data-out="b-bin">{fmtBin(initialB)}</span></span>
       <span class="r-hex">$<span data-out="b-hex">{fmtHex(initialB)}</span></span>
       <span class="r-dec" data-out="b-dec">{initialB}</span>
     </div>
-  </div>
 
-  <div class="op-divider"></div>
+    {/* Divider */}
+    <div class="op-divider" style="grid-column: 1 / -1;"></div>
 
-  {/* Result */}
-  <div class="operand operand-result" data-row="r">
+    {/* Result row */}
     <div class="op-tag op-tag-eq">=</div>
-    <div class="led-row">
-      {indices.map((i) => {
-        const on = ((initialResult >> i) & 1) === 1;
-        return (
-          <div
-            class="bit"
-            data-result-bit={i}
-            data-on={on ? 'true' : 'false'}
-          >
-            <span class="led-bezel">
-              <span class="led"></span>
-            </span>
-          </div>
-        );
-      })}
-    </div>
+    {indices.map((i, n) => (
+      <>
+        {n === 4 && <div></div>}
+        <div
+          class="bit"
+          data-result-bit={i}
+          data-on={((initialResult >> i) & 1) === 1 ? 'true' : 'false'}
+        >
+          <span class="led-bezel">
+            <span class="led"></span>
+          </span>
+        </div>
+      </>
+    ))}
     <div class="readout">
       <span class="r-bin">%<span data-out="r-bin">{fmtBin(initialResult)}</span></span>
       <span class="r-hex">$<span data-out="r-hex">{fmtHex(initialResult)}</span></span>
       <span class="r-dec" data-out="r-dec">{initialResult}</span>
     </div>
+
+  </div>
   </div>
 
   <div class="carry-flag" data-carry-flag data-active={initialCarry ? 'true' : 'false'}>
@@ -165,37 +185,46 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
 </div>
 
 <style>
-  .bitop .operand {
+  .bitop .bitop-grid {
     display: grid;
-    grid-template-columns: 2rem 1fr auto;
+    grid-template-columns: 2rem repeat(4, minmax(0, 1fr)) 0.5rem repeat(4, minmax(0, 1fr)) minmax(6rem, auto);
     align-items: center;
-    column-gap: 0.75rem;
-    margin: 0.5rem 0;
+    column-gap: 0.5rem;
+    row-gap: 0.4rem;
   }
+
   .bitop .op-tag {
     font-family: theme('fontFamily.mono');
     font-size: 0.95rem;
     font-weight: 700;
     color: theme('colors.ink.300');
     text-align: center;
+    z-index: 1;
   }
   .bitop .op-tag-eq {
     color: theme('colors.accent.DEFAULT');
     font-size: 1.1rem;
   }
-  .bitop[data-op='NOT'] .operand[data-row='b'] {
+  .bitop .bit-row-tag {
+    color: theme('colors.ink.400');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+  .bitop .bit-num {
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    color: theme('colors.ink.400');
+    text-align: center;
+    z-index: 1;
+    position: relative;
+  }
+
+  .bitop[data-op='NOT'] [data-row='b'] {
     display: none;
   }
 
-  .bitop .led-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) 0.5rem repeat(4, minmax(0, 1fr));
-    align-items: center;
-    column-gap: 0.5rem;
-  }
-  .bitop .led-row > div:nth-child(5) {
-    /* spacer column placeholder if needed */
-  }
   .bitop .bit {
     display: flex;
     align-items: center;
@@ -205,16 +234,19 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
     cursor: pointer;
     border: none;
     background: transparent;
+    z-index: 1;
+    position: relative;
   }
   .bitop .bit:hover {
     background: rgba(255, 255, 255, 0.04);
   }
-  .bitop .operand-result .bit {
+  .bitop > .bitop-grid > .bit[data-result-bit] {
     cursor: default;
   }
-  .bitop .operand-result .bit:hover {
+  .bitop > .bitop-grid > .bit[data-result-bit]:hover {
     background: transparent;
   }
+
   .bitop .led-bezel {
     display: inline-flex;
     align-items: center;
@@ -248,7 +280,7 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
       0 0 4px theme('colors.accent.DEFAULT'),
       inset 0 0 6px rgba(255, 255, 255, 0.4);
   }
-  .bitop .operand-result .bit[data-on='true'] .led {
+  .bitop .bit[data-result-bit][data-on='true'] .led {
     background: radial-gradient(
       circle at 35% 30%,
       color-mix(in srgb, theme('colors.amber.300') 80%, white) 0%,
@@ -269,7 +301,10 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
     font-size: 0.85rem;
     line-height: 1.3;
     gap: 1px;
-    min-width: 6rem;
+    z-index: 1;
+    position: relative;
+    background: theme('colors.ink.800');
+    padding-left: 0.5rem;
   }
   .bitop .r-bin { color: theme('colors.accent.DEFAULT'); }
   .bitop .r-hex { color: theme('colors.sky.300'); }
@@ -279,7 +314,9 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
     display: flex;
     gap: 0.4rem;
     justify-content: center;
-    margin: 0.6rem 0;
+    margin: 0.4rem 0;
+    z-index: 1;
+    position: relative;
   }
   .bitop .op-pill {
     font-family: theme('fontFamily.mono');
@@ -287,7 +324,7 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: theme('colors.ink.300');
-    background: rgba(0, 0, 0, 0.4);
+    background: theme('colors.ink.800');
     border: 1px solid theme('colors.ink.700');
     border-radius: 6px;
     padding: 4px 12px;
@@ -311,7 +348,33 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
   .bitop .op-divider {
     height: 1px;
     background: theme('colors.ink.700');
-    margin: 0.6rem 0 0.4rem;
+    margin: 0.4rem 0;
+    z-index: 1;
+    position: relative;
+  }
+
+  /* Vertical column rails — overlay aligned to the same grid template */
+  .bitop .bitop-content {
+    position: relative;
+  }
+  .bitop .bit-rails-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 2rem repeat(4, minmax(0, 1fr)) 0.5rem repeat(4, minmax(0, 1fr)) minmax(6rem, auto);
+    column-gap: 0.5rem;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bitop .bit-rails-overlay .rail {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    justify-self: center;
+    height: 100%;
+  }
+  .bitop .bitop-grid {
+    position: relative;
+    z-index: 1;
   }
 
   .bitop .carry-flag {
@@ -319,7 +382,7 @@ const ops: Op[] = ['AND', 'OR', 'XOR', 'NOT', 'ADD', 'SUB'];
     align-items: center;
     gap: 6px;
     margin: 0.5rem 0 0;
-    padding-left: calc(2rem + 0.75rem);
+    padding-left: calc(2rem + 0.5rem);
     font-family: theme('fontFamily.mono');
     font-size: 0.7rem;
     text-transform: uppercase;

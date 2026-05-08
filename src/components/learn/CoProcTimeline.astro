@@ -1,0 +1,177 @@
+---
+// Two-lane timeline showing Bill working in parallel with Kathy.
+// Bill never pauses; Kathy churns in parallel; IRQ fires when she's done.
+---
+
+<figure class="coproc-timeline not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner">
+  <figcaption class="ct-caption">
+    <span class="ct-tag">Timeline</span>
+    Bill writes operands, fires the GO command, then keeps working
+    on the main program. Kathy churns in parallel. When she's done,
+    she raises IRQ; Bill briefly drops in, grabs the result, and
+    keeps going.
+  </figcaption>
+
+  <div class="ct-stage">
+    <div class="ct-lane ct-lane-bill">
+      <span class="ct-lane-tag">Bill</span>
+      <span class="ct-bar"></span>
+      <span class="ct-marker ct-marker-start" data-marker="go" aria-hidden="true">
+        <span class="ct-arrow">↓</span>
+      </span>
+      <span class="ct-marker ct-marker-end" data-marker="rti" aria-hidden="true">
+        <span class="ct-arrow">↑</span>
+      </span>
+    </div>
+
+    <div class="ct-lane ct-lane-kathy">
+      <span class="ct-lane-tag">Kathy</span>
+      <span class="ct-bar ct-bar-kathy"></span>
+    </div>
+
+    <div class="ct-markers">
+      <span class="ct-mark ct-mark-go">Bill writes operands → fires GO</span>
+      <span class="ct-mark ct-mark-irq">Kathy raises IRQ → Bill grabs result</span>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .coproc-timeline .ct-caption {
+    font-family: theme('fontFamily.sans');
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: theme('colors.ink.300');
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid theme('colors.ink.700');
+  }
+  .coproc-timeline .ct-tag {
+    display: inline-block;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: theme('colors.ink.400');
+    margin-right: 0.5rem;
+    font-weight: 600;
+  }
+
+  .coproc-timeline .ct-stage {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 0.65rem;
+  }
+
+  .coproc-timeline .ct-lane {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .coproc-timeline .ct-lane-tag {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: theme('colors.ink.400');
+    text-align: right;
+    padding-right: 0.5rem;
+    font-weight: 600;
+  }
+  .coproc-timeline .ct-bar {
+    height: 16px;
+    border-radius: 8px;
+  }
+  .coproc-timeline .ct-lane-bill .ct-bar {
+    background: linear-gradient(90deg,
+      rgba(126, 231, 135, 0.4),
+      rgba(86, 211, 100, 0.55));
+    border: 1px solid rgba(126, 231, 135, 0.5);
+  }
+  .coproc-timeline .ct-bar-kathy {
+    background:
+      linear-gradient(90deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0) 18%,
+        rgba(168, 85, 247, 0.45) 18%,
+        rgba(168, 85, 247, 0.55) 80%,
+        rgba(0, 0, 0, 0) 80%,
+        rgba(0, 0, 0, 0) 100%);
+    border: 1px dashed rgba(168, 85, 247, 0.4);
+  }
+  .coproc-timeline .ct-lane-kathy .ct-bar {
+    /* (only the colored slice between 18% and 80% renders;
+       border outlines the whole lane to suggest "Kathy exists",
+       fill shows when she's working) */
+  }
+
+  /* Vertical drop arrows from Bill's lane to Kathy's lane (and back) */
+  .coproc-timeline .ct-marker {
+    position: absolute;
+    top: -4px;
+    bottom: -32px; /* extend below into Kathy's lane */
+    width: 1px;
+    pointer-events: none;
+  }
+  .coproc-timeline .ct-marker-start {
+    /* anchored to "Bill fires GO" position */
+    left: calc(4rem + 0.5rem + 18%);
+    border-left: 1px dashed rgba(168, 85, 247, 0.55);
+  }
+  .coproc-timeline .ct-marker-end {
+    /* anchored to "Kathy raises IRQ" position */
+    left: calc(4rem + 0.5rem + 80%);
+    border-left: 1px dashed rgba(244, 63, 94, 0.55);
+  }
+  .coproc-timeline .ct-arrow {
+    position: absolute;
+    left: -7px;
+    bottom: -16px;
+    font-family: theme('fontFamily.mono');
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgba(244, 63, 94, 0.9);
+  }
+  .coproc-timeline .ct-marker-start .ct-arrow {
+    color: rgba(168, 85, 247, 0.9);
+  }
+
+  .coproc-timeline .ct-markers {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+    position: relative;
+  }
+  .coproc-timeline .ct-markers::before {
+    content: '';
+    grid-column: 1;
+  }
+  .coproc-timeline .ct-mark {
+    position: absolute;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+  .coproc-timeline .ct-mark-go {
+    left: calc(4rem + 0.5rem + 18%);
+    color: rgba(168, 85, 247, 0.95);
+    top: 0;
+  }
+  .coproc-timeline .ct-mark-irq {
+    left: calc(4rem + 0.5rem + 80%);
+    color: theme('colors.rose.300');
+    top: 0;
+  }
+
+  @media (max-width: 640px) {
+    .coproc-timeline .ct-mark {
+      font-size: 0.55rem;
+    }
+  }
+</style>

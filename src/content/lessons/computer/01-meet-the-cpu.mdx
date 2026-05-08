@@ -1,0 +1,226 @@
+---
+title: Meet the CPU
+series: computer
+seriesTitle: How a computer works
+order: 1
+summary: Now that bits and bytes feel real, let's see how an actual chip uses them. Meet the CPU — the boss of the whole show — and watch it talk to memory through a small handful of wires.
+tags: ['cpu', '6502', 'memory', 'bus', 'fundamentals']
+---
+
+import BitRow from '../../../components/learn/BitRow.astro';
+import BusTrace from '../../../components/learn/BusTrace.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+You've spent five lessons getting comfortable with binary. Bits, bytes,
+words, hex, the four bit ops, the four arithmetic ops, two's complement,
+and shifts. That's the vocabulary of *what* a computer manipulates.
+
+This series picks up the other half of the picture: *what does the
+manipulating*. There's a chip somewhere in there — the CPU — that pushes
+those bytes around, decides which way to go, talks to memory and to the
+outside world. We're going to build up the smallest useful model of that
+chip until you can read what's actually happening inside a real running
+program.
+
+<Callout title="Which CPU are we talking about?" variant="note">
+We're going to focus on a particular CPU called the **6502**. The Apple
+II ran on it. So did the Commodore 64 — for a long time the
+best-selling computer of all time. Atari, the Nintendo NES, the BBC
+Micro. The 6502 was *everywhere* in the 1980s.
+
+We pick it for one reason: **it's simple**. Modern CPUs are extraordinary
+machines that do half a dozen things in parallel, predict branches before
+you finish writing them, and reorder instructions on the fly. None of
+that helps you understand what a CPU *is*. The 6502 doesn't do any of it.
+It executes one instruction at a time, on a few internal registers, in a
+predictable rhythm. Every concept here scales up to modern silicon —
+they're all the same tricks, just turned up to eleven.
+</Callout>
+
+## The CPU is the conductor
+
+The CPU has one job: **coordination**. It reads bytes, transforms them,
+writes them back. Everything else in the computer — memory, video,
+keyboard, the LED on the front panel — sits there waiting to be told what
+to do. The CPU does the telling.
+
+Take the SHL and SHR shifts you met in lesson 5. On a 6502, shifting a
+byte is a *single instruction*. The chip reads the byte, slides the bits
+over, writes the result back, all from one line of program code. And
+there are *several variations* of that one instruction — one of them
+operates on a working byte the CPU keeps inside itself, another reaches
+out and shifts a byte sitting in memory directly. Same shift, but with a
+big difference in speed and in how many bytes the program takes up. We'll
+see why later. (Don't worry if "in memory" vs "inside the CPU" is fuzzy
+right now — the rest of this lesson is exactly about that distinction.)
+
+The point: the CPU is in charge. Everything that happens, happens because
+it asked. To do anything useful, it has to talk to the chips around it.
+
+## A few wires connect everything
+
+A 6502 chip is a small black rectangle with 40 pins sticking out of it.
+Most of those pins are just *wires* going to other chips on the same
+board. Only a few of them matter for understanding what's going on:
+
+- **Address lines** — 16 wires that say *where*.
+- **Data lines** — 8 wires that say *what*.
+- **Read/Write line** — 1 wire that says *which way the data is moving*.
+- **Clock** — 1 wire that says *do it now*.
+
+That's the working model. Almost everything else is variation on those
+four ideas.
+
+## Address lines — *where*
+
+The CPU has 16 address pins. Each pin is one wire holding either high or
+low voltage — the same `0` and `1` we've been working with. Sixteen wires
+together form a **word**, which (per lesson 2) can hold values from `0`
+to `65,535` — or, in hex, `$0000` to `$FFFF`.
+
+That value is the **address** the CPU is talking to *right now*.
+
+<BitRow bits={16} value={0x8002} label="An address: $8002. Sixteen wires, sixteen voltages." />
+
+Every chip on the board (memory, video chip, sound chip, the I/O port
+that lights up the LED on the front panel) has an *address range it
+responds to*. When the CPU sets these 16 pins to some value, exactly one
+chip on the board says "that's me." Everyone else stays quiet.
+
+## Data lines — *what*
+
+Eight more pins are the **data lines**. They carry one byte at a time —
+the `0..255` we've been clicking on in lessons 1–5.
+
+<BitRow bits={8} value={0x0A} label="Data: $0A. Eight wires, one byte." />
+
+Whether the CPU is *sending* a byte (writing) or *expecting* a byte
+(reading) depends on the next wire over.
+
+## Read/Write — *which direction*
+
+A single wire — the **R/W line** — tells everyone on the board which way
+the data is flowing. The CPU is the only one allowed to change it.
+
+- **R/W high (1)** → the CPU wants to *read*. "Whoever owns this
+  address, please put a byte on the data lines." The CPU listens.
+- **R/W low (0)** → the CPU wants to *write*. "Whoever owns this
+  address, take this byte." The CPU has already put the byte on the
+  data lines.
+
+Same wires, two different conversations, depending on which direction
+that one R/W line is pointing.
+
+## A walkthrough — Bill and Emily
+
+Concrete picture. Pretend the CPU is a person named **Bill**. Bill is
+the dad in this analogy — calm, methodical, knows exactly what he wants
+done and where. Bill wants to save the value `10` — that's `$0A`, or
+`%00001010` — into the third box of memory.
+
+Then pretend memory is his daughter, **Emily**. Emily has 8 boxes
+under her care, and the address range `$8000` to `$8007` belongs to
+her. (The 3rd box is at `$8002` — same `0`-based indexing we ran into
+back when we numbered LEDs from bit 0.)
+
+Here's how Bill makes it happen:
+
+1. **Set the address lines to `$8002`.** Bill flips his 16 address pins
+   to whatever combination of high/low produces this number. Every chip
+   on the board is watching, but only Emily recognizes `$8002` — it
+   falls inside her range.
+2. **Set the data lines to `$0A`.** Bill flips his 8 data pins to the
+   binary of `10`.
+3. **Set the R/W line to *write*.** That's a `0`. "Listen, don't
+   speak."
+4. **Pulse the clock.** This is a single beat — voltage on, voltage
+   off, very briefly. We'll talk about it next.
+5. **Emily takes the byte.** During that pulse, Emily reads the address
+   pins (sees `$8002`), reads the R/W pin (sees "write"), reads the
+   data pins (sees `$0A`), and stores it in her box 2. Done.
+
+That's a *write*. A *read* is the same five steps with R/W pointing the
+other way: Bill sets the address, sets R/W to *read*, pulses the clock,
+and Emily — knowing she owns this address — places a byte on the data
+lines. Bill grabs it as the pulse ends.
+
+Five steps, every time. Every byte that ever moves anywhere in the
+computer is some variation of these five steps.
+
+## The clock — everyone moves on the beat
+
+Step 4 in the walkthrough was a *pulse*. That pulse comes from a
+separate component called the **clock** — let's give her a name too:
+**Kelly**. Kelly does exactly one thing, and she never stops doing it:
+she generates a steady square wave — high, low, high, low — millions
+of times per second. Bill can halt. Bill can crash. Kelly keeps
+ticking.
+
+Before we watch it run: one quick name to add to your vocabulary. Most
+CPUs have a small handful of **internal registers** — tiny one-byte
+(or one-word) holding spots inside the chip itself, separate from
+memory. They're the working space where arithmetic happens. The 6502
+has three main ones — `A`, `X`, and `Y` — and the most important is
+**`A`, the accumulator**, the byte the CPU operates on most often. When
+the CPU writes a byte to memory, that byte typically came *out of* `A`.
+When it reads a byte from memory, the byte typically goes *into* `A`.
+We'll dig into all three registers next lesson; for now you'll just see
+`A` show up in the visualization below as the value Bill is sending or
+receiving.
+
+Watch it run. The square wave at the top is the clock; on each pulse
+the CPU sets the address, sets R/W and data, and the matching memory
+cell takes the byte (or hands one back, on a read). Press **Pause** if
+you want to read at your own pace:
+
+<BusTrace />
+
+
+Think of it like the kick drum in a song. The whole rest of the band
+(CPU, memory, video chip, everything) is keeping time off that one beat.
+On every tick, the CPU progresses through one tiny step of whatever
+instruction it's currently executing.
+
+This sets up an important constraint: **everyone on the board has to be
+fast enough to keep up**. When the CPU writes a byte to Emily, Emily has
+*one clock cycle* — typically less than a microsecond on a 6502 — to
+recognize her address, read the R/W line, grab the byte, and stash it.
+She doesn't get extra time. There's no "hold on, give me a second."
+
+If Emily is too slow, the CPU has already moved on by the time she's
+ready, and her box gets the wrong value (or no value at all). The CPU
+doesn't *know* it didn't work. It just keeps going. A few cycles later
+some downstream piece of code reads what it expects to be `$0A` and
+gets `$00` instead, and the program crashes — or quietly does the
+wrong thing, which is worse.
+
+When you buy memory chips, the *speed rating* on the chip is exactly
+this: how quickly it can respond inside one clock cycle. Modern systems
+have all kinds of ways to handle a slow device (wait states, asynchronous
+buses, caches) but on a 6502, if the chip on the other end can't keep
+up, the system just fails. Simple, brutal, easy to reason about.
+
+## What we just introduced
+
+Five concepts, each a building block for what comes next:
+
+- **CPU** — the chip in charge. Coordinates everything else.
+- **Address lines** — 16 wires saying *where*. Every chip listens to a
+  range of addresses.
+- **Data lines** — 8 wires saying *what*. One byte per cycle.
+- **Read/Write line** — 1 wire saying *which direction*.
+- **Clock** — 1 wire saying *go, on this beat*.
+
+That's the smallest model of a computer that actually works. Everything
+else — registers, instructions, programs, peripherals, video — sits on
+top of these.
+
+## What's next
+
+We've talked about reading and writing memory, but the CPU doesn't *just*
+shuffle bytes around — it has its own tiny set of internal storage
+called **registers** that it operates on at full speed without going out
+to the bus at all. That's where most of the thinking happens. Next
+lesson: what registers are, why a 6502 only has three useful ones, and
+why "load → operate → store" turns out to be the rhythm every program
+ever written is built on.

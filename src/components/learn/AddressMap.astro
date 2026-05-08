@@ -1,0 +1,226 @@
+---
+interface Region {
+  top: string;          // top address label, e.g. "$FFFF"
+  bottom: string;       // bottom address label, e.g. "$C000"
+  name: string;         // region name (Carl / Emily / etc.)
+  kind: 'rom' | 'ram' | 'io';
+  desc: string;         // one-line role
+  weight?: number;      // visual height weight; defaults to 1
+}
+
+interface Props {
+  highlight?: string;   // optional address to flag (e.g., "$FFFC")
+  highlightLabel?: string;
+}
+
+const { highlight, highlightLabel } = Astro.props;
+
+const regions: Region[] = [
+  {
+    top: '$FFFF',
+    bottom: '$C000',
+    name: 'Carl',
+    kind: 'rom',
+    desc: 'ROM — program code, RESET vector at $FFFC',
+    weight: 1.4,
+  },
+  {
+    top: '$BFFF',
+    bottom: '$8000',
+    name: 'Martha',
+    kind: 'io',
+    desc: 'I/O — peripherals (we meet Martha next lesson)',
+    weight: 1,
+  },
+  {
+    top: '$7FFF',
+    bottom: '$0000',
+    name: 'Emily',
+    kind: 'ram',
+    desc: 'RAM — variables, scratch, stack',
+    weight: 1.6,
+  },
+];
+
+const totalWeight = regions.reduce((s, r) => s + (r.weight ?? 1), 0);
+---
+
+<aside class="address-map not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner">
+  <div class="map-header">
+    <div class="map-title">6502 address map</div>
+    <div class="map-sub">A simplified view of the 64 KB the CPU can talk to</div>
+  </div>
+
+  <div class="map-body">
+    {regions.map((r) => {
+      const pct = ((r.weight ?? 1) / totalWeight) * 100;
+      return (
+        <div class="region" data-kind={r.kind} style={`flex-basis: ${pct}%;`}>
+          <div class="region-top">
+            <span class="addr">{r.top}</span>
+          </div>
+          <div class="region-body">
+            <div class="region-name">{r.name}</div>
+            <div class="region-desc">{r.desc}</div>
+            {highlight && r.kind === 'rom' && (
+              <div class="region-highlight">
+                <span class="hl-addr">{highlight}</span>
+                {highlightLabel && <span class="hl-label">{highlightLabel}</span>}
+              </div>
+            )}
+          </div>
+          <div class="region-bottom">
+            <span class="addr">{r.bottom}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <div class="map-legend">
+    <div class="legend-item"><span class="swatch" data-kind="rom"></span> ROM (read-only)</div>
+    <div class="legend-item"><span class="swatch" data-kind="io"></span> I/O ports</div>
+    <div class="legend-item"><span class="swatch" data-kind="ram"></span> RAM (read/write)</div>
+  </div>
+</aside>
+
+<style>
+  .address-map .map-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid theme('colors.ink.700');
+  }
+  .address-map .map-title {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: theme('colors.ink.200');
+    font-weight: 700;
+  }
+  .address-map .map-sub {
+    font-size: 0.85rem;
+    color: theme('colors.ink.400');
+    margin-top: 0.2rem;
+  }
+
+  .address-map .map-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 24rem;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .address-map .region {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border: 1px solid theme('colors.ink.700');
+    border-bottom: none;
+  }
+  .address-map .region:last-child {
+    border-bottom: 1px solid theme('colors.ink.700');
+  }
+  .address-map .region[data-kind='rom'] {
+    background: linear-gradient(180deg,
+      rgba(56, 189, 248, 0.16),
+      rgba(56, 189, 248, 0.06));
+  }
+  .address-map .region[data-kind='io'] {
+    background: linear-gradient(180deg,
+      rgba(244, 63, 94, 0.14),
+      rgba(244, 63, 94, 0.06));
+  }
+  .address-map .region[data-kind='ram'] {
+    background: linear-gradient(180deg,
+      rgba(252, 211, 77, 0.14),
+      rgba(252, 211, 77, 0.05));
+  }
+
+  .address-map .region-top,
+  .address-map .region-bottom {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.8rem;
+    color: theme('colors.ink.300');
+    font-variant-numeric: tabular-nums;
+  }
+  .address-map .region-top { text-align: right; }
+  .address-map .region-bottom { text-align: right; }
+
+  .address-map .region-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0;
+  }
+  .address-map .region-name {
+    font-family: theme('fontFamily.mono');
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: theme('colors.ink.100');
+  }
+  .address-map .region[data-kind='rom'] .region-name { color: theme('colors.sky.300'); }
+  .address-map .region[data-kind='io'] .region-name { color: theme('colors.rose.300'); }
+  .address-map .region[data-kind='ram'] .region-name { color: theme('colors.amber.300'); }
+  .address-map .region-desc {
+    font-size: 0.85rem;
+    color: theme('colors.ink.300');
+  }
+  .address-map .region-highlight {
+    margin-top: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: flex-start;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid theme('colors.sky.400');
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  }
+  .address-map .hl-addr {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: theme('colors.sky.300');
+  }
+  .address-map .hl-label {
+    font-size: 0.75rem;
+    color: theme('colors.ink.300');
+    font-style: italic;
+  }
+
+  .address-map .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid theme('colors.ink.700');
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    color: theme('colors.ink.400');
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .address-map .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .address-map .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid theme('colors.ink.700');
+  }
+  .address-map .swatch[data-kind='rom'] { background: rgba(56, 189, 248, 0.3); }
+  .address-map .swatch[data-kind='io'] { background: rgba(244, 63, 94, 0.3); }
+  .address-map .swatch[data-kind='ram'] { background: rgba(252, 211, 77, 0.3); }
+</style>

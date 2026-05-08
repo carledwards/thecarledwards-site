@@ -45,4 +45,8 @@
   .text-mono-tag {
     @apply font-mono text-xs uppercase tracking-[0.18em] text-ink-400;
   }
+
+  .panel-title {
+    @apply font-mono text-sm uppercase tracking-[0.18em] text-ink-200 font-semibold;
+  }
 }
