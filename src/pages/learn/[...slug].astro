@@ -1,0 +1,49 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import LessonLayout from '../../layouts/LessonLayout.astro';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons', ({ data }) => !data.draft);
+  return lessons.map((lesson) => {
+    const series = lessons
+      .filter((l) => l.data.series === lesson.data.series)
+      .sort((a, b) => a.data.order - b.data.order);
+    const idx = series.findIndex((l) => l.slug === lesson.slug);
+    const prev = idx > 0 ? series[idx - 1] : undefined;
+    const next = idx < series.length - 1 ? series[idx + 1] : undefined;
+    return {
+      params: { slug: lesson.slug },
+      props: {
+        lesson,
+        total: series.length,
+        prev: prev && { slug: prev.slug, title: prev.data.title },
+        next: next && { slug: next.slug, title: next.data.title },
+      },
+    };
+  });
+}
+
+interface Props {
+  lesson: CollectionEntry<'lessons'>;
+  total: number;
+  prev?: { slug: string; title: string };
+  next?: { slug: string; title: string };
+}
+
+const { lesson, total, prev, next } = Astro.props;
+const { Content } = await lesson.render();
+---
+
+<LessonLayout
+  title={lesson.data.title}
+  summary={lesson.data.summary}
+  series={lesson.data.series}
+  seriesTitle={lesson.data.seriesTitle}
+  order={lesson.data.order}
+  total={total}
+  tags={lesson.data.tags}
+  prev={prev}
+  next={next}
+>
+  <Content />
+</LessonLayout>

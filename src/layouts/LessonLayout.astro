@@ -1,0 +1,240 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface NavLink {
+  slug: string;
+  title: string;
+}
+
+interface Props {
+  title: string;
+  summary: string;
+  series: string;
+  seriesTitle: string;
+  order: number;
+  total: number;
+  tags?: string[];
+  prev?: NavLink;
+  next?: NavLink;
+}
+
+const {
+  title,
+  summary,
+  series,
+  seriesTitle,
+  order,
+  total,
+  tags = [],
+  prev,
+  next,
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={summary} article={true}>
+  <article class="mx-auto w-full max-w-5xl px-6 py-16 sm:py-20">
+    <a href="/learn/" class="text-mono-tag hover:text-accent inline-flex items-center gap-2">
+      <span aria-hidden="true">←</span> all lessons
+    </a>
+
+    <header class="mt-8 pb-8 border-b border-ink-800">
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <a
+          href={`/learn/#${series}`}
+          class="font-mono text-[10px] uppercase tracking-[0.2em] text-accent hover:text-accent-dim"
+        >
+          {seriesTitle}
+        </a>
+        <span class="font-mono text-[10px] uppercase tracking-wider text-ink-500">
+          Lesson {order} of {total}
+        </span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-semibold text-ink-100 tracking-tight leading-[1.1]">
+        {title}
+      </h1>
+      <p class="mt-6 text-lg text-ink-300 leading-relaxed">{summary}</p>
+      {tags.length > 0 && (
+        <div class="mt-5 flex flex-wrap gap-2">
+          {tags.map((t) => (
+            <span class="font-mono text-[10px] uppercase tracking-wider text-ink-400 bg-ink-800/60 px-2 py-0.5 rounded">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <div class="mt-6 flex justify-end">
+      <button
+        type="button"
+        data-lesson-show-all
+        class="font-mono text-[10px] uppercase tracking-wider text-ink-400 hover:text-accent border border-ink-700 hover:border-accent rounded px-2 py-1"
+      >
+        Show all
+      </button>
+    </div>
+
+    <div
+      data-lesson-content
+      class="lesson-content prose prose-invert prose-lg mt-6 max-w-none
+             prose-headings:scroll-mt-24
+             prose-pre:rounded-lg prose-pre:border prose-pre:border-ink-800
+             prose-img:rounded-lg prose-img:border prose-img:border-ink-800
+             prose-a:underline-offset-4 prose-a:decoration-accent/40 hover:prose-a:decoration-accent"
+    >
+      <slot />
+    </div>
+
+    <footer class="mx-auto w-full max-w-3xl mt-16 pt-8 border-t border-ink-800 grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {prev ? (
+        <a href={`/learn/${prev.slug}/`} class="group rounded-lg border border-ink-800 hover:border-accent/60 p-4">
+          <div class="text-mono-tag mb-1">← Previous</div>
+          <div class="text-ink-100 group-hover:text-accent">{prev.title}</div>
+        </a>
+      ) : (
+        <div></div>
+      )}
+      {next ? (
+        <a href={`/learn/${next.slug}/`} class="group rounded-lg border border-ink-800 hover:border-accent/60 p-4 sm:text-right">
+          <div class="text-mono-tag mb-1">Next →</div>
+          <div class="text-ink-100 group-hover:text-accent">{next.title}</div>
+        </a>
+      ) : (
+        <div></div>
+      )}
+    </footer>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  /* Constrain narrative content to a readable line length, but let
+     widgets (anything with .not-prose) and step <section> wrappers fill
+     the wider lesson container. */
+  .lesson-content > p,
+  .lesson-content > ul,
+  .lesson-content > ol,
+  .lesson-content > h1,
+  .lesson-content > h2,
+  .lesson-content > h3,
+  .lesson-content > h4,
+  .lesson-content > blockquote,
+  .lesson-content > pre,
+  .lesson-content > table,
+  .lesson-content section[data-step] > p,
+  .lesson-content section[data-step] > ul,
+  .lesson-content section[data-step] > ol,
+  .lesson-content section[data-step] > h1,
+  .lesson-content section[data-step] > h2,
+  .lesson-content section[data-step] > h3,
+  .lesson-content section[data-step] > h4,
+  .lesson-content section[data-step] > blockquote,
+  .lesson-content section[data-step] > pre,
+  .lesson-content section[data-step] > table {
+    max-width: 48rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+
+<script>
+  const STORAGE_KEY = 'lesson:show-all';
+
+  const initLesson = () => {
+    const root = document.querySelector<HTMLElement>('[data-lesson-content]');
+    if (!root) return;
+
+    const headings = Array.from(root.querySelectorAll<HTMLHeadingElement>(':scope > h2'));
+    const showAllBtn = document.querySelector<HTMLButtonElement>('[data-lesson-show-all]');
+
+    if (headings.length < 2) {
+      if (showAllBtn) showAllBtn.style.display = 'none';
+      return;
+    }
+
+    type Step = { heading: HTMLHeadingElement; nodes: Element[] };
+    const steps: Step[] = headings.map((h, i) => {
+      const next = headings[i + 1];
+      const nodes: Element[] = [];
+      let cursor = h.nextElementSibling;
+      while (cursor && cursor !== next) {
+        nodes.push(cursor);
+        cursor = cursor.nextElementSibling;
+      }
+      return { heading: h, nodes };
+    });
+
+    const wrappers: HTMLElement[] = [];
+    for (let i = 0; i < steps.length; i++) {
+      const { heading, nodes } = steps[i];
+      const wrap = document.createElement('section');
+      wrap.dataset.step = String(i);
+      heading.parentNode?.insertBefore(wrap, heading);
+      wrap.appendChild(heading);
+      for (const n of nodes) wrap.appendChild(n);
+      wrappers.push(wrap);
+    }
+
+    const nextWraps: HTMLElement[] = [];
+    for (let i = 0; i < wrappers.length - 1; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.lessonNext = String(i + 1);
+      btn.className = [
+        'not-prose lesson-next-btn mt-4 inline-flex items-center gap-2',
+        'rounded-md bg-accent text-ink-950 font-semibold px-4 py-2 text-sm',
+        'hover:bg-accent-dim',
+      ].join(' ');
+      btn.innerHTML = 'Next <span aria-hidden="true">→</span>';
+      wrappers[i].appendChild(btn);
+      nextWraps.push(btn);
+    }
+
+    let showAll = false;
+    try {
+      showAll = localStorage.getItem(STORAGE_KEY) === '1';
+    } catch {}
+
+    const apply = (revealUpTo: number) => {
+      for (let i = 0; i < wrappers.length; i++) {
+        wrappers[i].style.display = i <= revealUpTo ? '' : 'none';
+      }
+      for (let i = 0; i < nextWraps.length; i++) {
+        nextWraps[i].style.display = i < revealUpTo ? 'none' : '';
+      }
+    };
+
+    const setShowAll = (on: boolean) => {
+      showAll = on;
+      try {
+        localStorage.setItem(STORAGE_KEY, on ? '1' : '0');
+      } catch {}
+      if (showAllBtn) showAllBtn.textContent = on ? 'Step through' : 'Show all';
+      apply(on ? wrappers.length - 1 : 0);
+    };
+
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', () => setShowAll(!showAll));
+    }
+
+    for (const btn of nextWraps) {
+      btn.addEventListener('click', () => {
+        const target = Number(btn.dataset.lessonNext ?? '0');
+        for (let i = 0; i <= target; i++) {
+          wrappers[i].style.display = '';
+        }
+        for (let i = 0; i < nextWraps.length; i++) {
+          if (i < target) nextWraps[i].style.display = 'none';
+        }
+        wrappers[target].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+
+    setShowAll(showAll);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLesson);
+  } else {
+    initLesson();
+  }
+</script>

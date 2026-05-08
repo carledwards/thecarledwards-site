@@ -1,0 +1,214 @@
+---
+title: Arithmetic and shifts
+series: binary
+seriesTitle: Binary, by hand
+order: 5
+summary: Add and subtract walked bit-by-bit with carries. Why multiply costs more than add. And the two operations that are almost free — shift left doubles, shift right halves, just by sliding the wires.
+tags: ['binary', 'arithmetic', 'shifts', 'add', 'sub', 'mul', 'div']
+---
+
+import BitOp from '../../../components/learn/BitOp.astro';
+import BitShift from '../../../components/learn/BitShift.astro';
+
+So far the bytes have just sat there. We've turned bits on and off, masked
+them, complemented them — all bit-level surgery, all in the same lane.
+Time to do *math*.
+
+## Adding by hand
+
+Adding binary numbers is the same procedure you used in second grade:
+column by column, right to left, carrying when a column overflows. The
+only difference is that columns overflow more often, because there are
+only two digits.
+
+The four rules that cover every column:
+
+```
+   0           1           1           1
++  0        +  0        +  1        +  1
+─────       ─────       ─────       ─────
+   0           1          10           ?  ← carry, plus next column
+```
+
+Three of those have no carry. The fourth — `1 + 1` — produces `10` (which
+is `2` in binary), so we write `0` and carry the `1` into the next column.
+And once carries start, we sometimes have *three* things to add in a
+column: the two operand bits plus an incoming carry. `1 + 1 + 1 = 11`,
+which means write `1` and carry `1`. The procedure is the same.
+
+Here's `13 + 22 = 35` worked all the way through:
+
+```
+       carry: . 1 . . . 1 1 .       ← what got carried into each column
+                  1 1 1 1
+              0 0 0 0 1 1 0 1   ← 13
+          +   0 0 0 1 0 1 1 0   ← 22
+              ─────────────────
+              0 0 1 0 0 0 1 1   ← 35
+```
+
+Read the columns from right to left:
+- Col 0: `1 + 0 = 1`. Write `1`, no carry.
+- Col 1: `0 + 1 = 1`. Write `1`, no carry.
+- Col 2: `1 + 1 = 10`. Write `0`, **carry 1** into col 3.
+- Col 3: `1 + 0 + carry 1 = 10`. Write `0`, **carry 1** into col 4.
+- Col 4: `0 + 1 + carry 1 = 10`. Write `0`, **carry 1** into col 5.
+- Col 5: `0 + 0 + carry 1 = 1`. Write `1`, no carry.
+- Col 6, 7: zero.
+
+The widget below does this for you. Click bits in A and B, switch the op
+to **ADD**, and watch the result. The "carry" indicator lights up when the
+result wouldn't fit — same overflow we saw in lesson 4.
+
+<BitOp op="ADD" initialA={13} initialB={22} label="ADD — A + B. Try big numbers; watch the carry flag." />
+
+Set A to `200` and B to `100`. The true sum is `300`, but the byte can
+only hold `0..255`. The result you see is `44` (`300 - 256`) and the
+carry indicator lights up. The actual answer didn't *vanish* — the
+carry-out tells you "there was an extra `1` that couldn't fit." A
+multi-byte add (the kind we saw in lesson 2) reads that carry into the
+*next* byte's add, exactly the way you carry from the ones column to
+the tens.
+
+## Subtracting by hand
+
+Subtraction looks like the same procedure, with **borrow** in place of
+carry:
+
+```
+   0           0           1           0
+−  0        −  1        −  0        −  1
+─────       ─────       ─────       ─────
+   0           ?           1           1   ← need to borrow
+                                            from the next column
+```
+
+`0 − 1` is the awkward case. You borrow `1` from the next column,
+which becomes `2` in this column, so `2 − 1 = 1`. The next column then
+owes `1`.
+
+Switch the op to **SUB** and try `13 − 22`:
+
+<BitOp op="SUB" initialA={13} initialB={22} label="SUB — A - B. Below zero? Watch the borrow flag." />
+
+Same widget, now interpreting the operation as subtract. `13 − 22 =
+−9`, but as an unsigned byte, the result wraps to `247` (`256 − 9`),
+and the borrow flag lights up — same wrap we saw in the underflow
+demo. If you treat the byte as signed, `247` is exactly `−9`. The
+chip's adder did the right thing using the two's-complement trick: it
+subtracted by adding the negation. *Same hardware.*
+
+## Why multiply and divide cost more
+
+Add and subtract each visit every bit *once*. Eight bits, eight
+columns, done.
+
+Multiply, in the most basic algorithm, is "add the multiplicand to
+itself, shifted, once for each `1` bit in the multiplier." For an
+8-bit `A × B`, you might do up to 8 separate adds. Slow.
+
+Divide is worse. The schoolbook algorithm is "subtract and check, shift,
+repeat." Up to 8 (or more) iterations of subtract-and-shift.
+
+```
+Multiplication, 8-bit × 8-bit, schoolbook:
+  for i in 0..7:
+    if bit i of B is 1:
+      result += A << i
+                          ← that's up to 8 adds
+                          ← each "add" is itself a chain of carries
+
+Division, 8-bit ÷ 8-bit, schoolbook:
+  shift, subtract, compare, decide each bit
+                          ← that's up to 8 iterations
+                          ← with conditional logic in each
+```
+
+Modern CPUs have dedicated multiplier circuits that do this in one
+clock or a few, but they are *much* more silicon than an adder. Some
+embedded CPUs (the 6502, for example) have **no multiply instruction at
+all** — multiplication is a software loop. This is why optimizing
+multiplications away has been a thing forever in performance-sensitive
+code.
+
+That brings us to the two cheap operations.
+
+## Shift left — multiply by 2 for free
+
+Take a binary number. Move every bit one position to the left. Drop
+in a `0` on the right. What you have is *exactly* the value times 2.
+
+```
+%00000101  =  5
+shift left by 1:
+%00001010  =  10
+shift left by 1:
+%00010100  =  20
+shift left by 1:
+%00101000  =  40
+```
+
+Each shift doubles the value. The reason is the same reason multiplying
+by 10 in decimal "shifts everything left a place" — every position is
+worth one base bigger when you slide one column over. In binary, the
+base is 2.
+
+<BitShift initial={5} label="SHL doubles. Click SHL ×2 and watch %5 → %10 → %20 → %40 → ..." />
+
+Try it. Click **SHL ×2** repeatedly starting from `5`. You'll hit
+`80`, `160`, then on the next press the highest bit `(160 << 1)` would
+need bit 8 — which doesn't exist. The bit "drops" off the left, the
+result is `64` (which is `(160 × 2) − 256`), and that's overflow
+again. The widget shows you the bit that fell off, so you can see
+*what* was lost.
+
+Shift left is what every CPU has. It costs the same as moving a bit a
+single position — way less than running a full adder. Anywhere a
+program needs `× 2`, `× 4`, `× 8`, `× 16`, etc., shifts get used
+instead. A compiler will recognize `x * 8` and emit `x << 3` (shift
+left by 3 = multiply by `2³ = 8`).
+
+## Shift right — divide by 2 for free
+
+Reverse direction. Move every bit one slot to the right. The bottom
+bit drops off (that's the part you "lost" — the remainder when
+dividing by 2). The top fills with `0`.
+
+<BitShift initial={40} label="SHR halves. 40 → 20 → 10 → 5 → 2 (drops the 1)." />
+
+Try `40` and click **SHR ÷2** four times: `40 → 20 → 10 → 5 → 2`. The
+last step is the interesting one. `5 ÷ 2` mathematically is `2.5`, but
+integer divide truncates to `2`, and the dropped bit was `1` —
+exactly the remainder. So shift-right gives you "integer division by
+2" *and* "the remainder" for free.
+
+Combine the two and you can do almost any constant multiply/divide
+fast. Want `× 10`? That's `× 8 + × 2`, which is `(x << 3) + (x << 1)`.
+Two shifts and one add — much cheaper than the full multiplier path.
+
+## A note on signed shifts
+
+Two flavors of shift-right exist:
+
+- **Logical shift right (LSR)** — fills the top with `0`. What our
+  widget does. This is the right thing for unsigned numbers.
+- **Arithmetic shift right (ASR)** — fills the top with a *copy of the
+  sign bit*. This preserves negative numbers when you halve them: `−10
+  >> 1 = −5`, not `123` (which is what LSR would give if you started
+  with `0xF6` aka `−10`).
+
+Most CPUs have both. The compiler picks based on whether the variable
+is signed. We're not going to belabor this — the takeaway is just:
+when shifting *signed* values right, ASR is what you want; when
+shifting *unsigned* values, LSR is what you want.
+
+## What's next
+
+You've got a complete vocabulary now: bits, bytes, words, all the
+common notations, the four bit ops, the four arithmetic ops, the two
+shifts, signed numbers, and the wraps and overflows that make all of
+this work on real hardware.
+
+That's the whole "binary, by hand" series. Next series will pick up
+the other side of the picture — what *operates* on these bits inside a
+real computer.

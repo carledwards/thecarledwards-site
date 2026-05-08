@@ -1,0 +1,202 @@
+---
+title: Overflow, underflow, and negative numbers
+series: binary
+seriesTitle: Binary, by hand
+order: 4
+summary: A byte can't go past 255 or below 0 — but it doesn't crash, it wraps. That same wrap is the key to a clever trick called two's complement that lets a single byte represent negative numbers, with a quirky asymmetric range that's worth understanding.
+tags: ['binary', 'overflow', 'signed', 'twos-complement']
+---
+
+import BitCounter from '../../../components/learn/BitCounter.astro';
+import BitRow from '../../../components/learn/BitRow.astro';
+
+A byte holds 256 distinct values: `0` through `255`. There is no `256`.
+There is no `-1`. The chip has eight wires, full stop. So what happens when
+you ask it to do `255 + 1`? Or `0 - 1`?
+
+It doesn't error. It doesn't even pause. It just... wraps.
+
+## Overflow — when adding goes off the top
+
+Run the counter below up to `255` and hit **Step +1** one more time.
+
+<BitCounter bits={8} start={250} initialSpeed={20} label="Count up. Watch what happens after 255." />
+
+Two things to notice:
+
+1. The transition from `255` to `0` is *not special*. Bit 0 ticks like
+   always. The fact that bits 1 through 7 *also* tick at the same moment is
+   what makes the number go to zero — but to the wires, it's just another
+   carry. The same one we saw three lessons ago.
+2. The byte forgets it was ever big. There's no flag in the byte itself
+   that says "this overflowed." The information is just gone, replaced by
+   `0`. Real CPUs *do* keep a "carry-out" flag in a separate register so
+   programs can detect this — but the byte is innocent.
+
+This is **overflow**: an operation produces a result that doesn't fit in
+the available bits. The bits that don't fit fall off the top.
+
+For a programmer, overflow is sometimes a bug (you wanted `300`, you got
+`44`) and sometimes a feature (modular arithmetic, hash mixing, free
+"every Nth tick" loops). The chip doesn't care which.
+
+## Underflow — when subtracting goes off the bottom
+
+The same thing happens at the other end. Hit **Step −1** while at `0`.
+
+<BitCounter bits={8} start={5} initialSpeed={20} label="Count down. Watch what happens past 0." />
+
+The byte rolls from `0` backwards to `255`. Same wrap, same indifference.
+The CPU's "borrow" flag (the subtract counterpart of carry-out) is what a
+program would check.
+
+You can think of a byte as living on a *ring*, not a line. After `255`
+comes `0`. Before `0` comes `255`. There's no edge — it's a circle. This
+ring view turns out to be the key to the next big idea.
+
+## Negative numbers, the obvious-but-wrong way
+
+A byte is just eight wires. It doesn't *know* whether you want unsigned
+(`0..255`) or signed (something with negatives). That's an interpretation
+the program imposes on top of the bits.
+
+The first idea most people try when designing a signed byte is "use one
+bit as the sign":
+
+```
+Bit 7 (the leftmost) = 0  →  positive
+Bit 7                = 1  →  negative
+Bits 6..0                 →  the magnitude
+```
+
+This is called **sign-magnitude** representation. It's intuitive. It also
+turns out to be a pain. Two reasons:
+
+1. There are two zeros: `00000000` (positive zero) and `10000000` (negative
+   zero). Now your equality check has to handle both.
+2. The CPU needs *separate* hardware for "add" and "subtract." The adder
+   can't just blindly do `A + B` — it has to first check the sign bits and
+   pick a path.
+
+Computer designers found a slicker idea.
+
+## Two's complement — the trick everyone uses
+
+The wrap-around we just watched is the seed. Here's the trick:
+
+> **The bit pattern that produces `0` when you add `1` to it is, by
+> definition, `-1`.**
+
+Think about it. If `255 + 1` wraps to `0`, then within the byte's
+arithmetic, `255` *is* `-1`. They're the same wire pattern. The chip
+treats `255 + 1 = 0`. So does `(-1) + 1 = 0`. Same equation, same wires,
+two different interpretations of the same bits.
+
+Run it the other direction: `1 + (-1) = 0`, so `(-1) = 0 - 1`. From the
+underflow demo above, `0 - 1` wraps to `255`. So `255` and `-1` *are the
+same byte*. We just choose to read it as `-1` when we're in signed mode.
+
+The full mapping for a single byte is:
+
+| Unsigned | Bit pattern | Signed |
+| ---: | :---: | ---: |
+| `0`   | `00000000` | `0` |
+| `1`   | `00000001` | `1` |
+| `127` | `01111111` | `127` |
+| `128` | `10000000` | `−128` |
+| `129` | `10000001` | `−127` |
+| `254` | `11111110` | `−2` |
+| `255` | `11111111` | `−1` |
+
+This is **two's complement**. The same 256 patterns, two different
+interpretations: unsigned (`0..255`) or signed (`-128..127`).
+
+Try it yourself — toggle bit 7 and watch the unsigned vs signed values
+disagree:
+
+<BitRow bits={8} value={1} showSigned={true} label="The same eight wires, read two ways." />
+
+Three things to confirm by clicking:
+
+- **All bits off** → `0` either way.
+- **Just bit 7 on** → `128` unsigned, `−128` signed. The biggest jump
+  happens here, because flipping that one bit flips the *meaning*.
+- **All bits on** → `255` unsigned, `−1` signed. The "biggest" unsigned
+  value is the same wire pattern as "negative one."
+
+Notice the rule for the high bit: when bit 7 is `0`, the signed value is
+the same as the unsigned (it's just the lower 7 bits). When bit 7 is `1`,
+the signed value is the unsigned value *minus 256*. That's the formula —
+but you'll get the feel for it faster from clicking than from reading it.
+
+## The negation recipe — flip and add 1
+
+Here's the trick that gives "two's complement" its name. To get the
+negative of any signed value:
+
+1. **Flip every bit** (that's the *one's* complement — yep, we met it
+   last lesson as `NOT`).
+2. **Add 1.**
+
+That's it. Two steps. No special "subtractor" needed — the chip just runs
+its normal adder.
+
+Let's verify with `5`:
+
+```
+ 5 unsigned    =  %00000101
+ NOT %00000101 =  %11111010      ← flip every bit
+ + 1                              ← add one
+              =  %11111011
+
+ %11111011 unsigned = 251
+ %11111011 signed   = 251 − 256 = −5    ✓
+```
+
+Or, working through the widget: set bits to make `5`, then build `-5`
+yourself by flipping and incrementing.
+
+<BitRow bits={8} value={0} showSigned={true} label="Build -5: flip bits 1, 3, 4, 5, 6, 7 (NOT 5), then +1 → bit 0 → already 1, becomes 0 with carry into bit 1, etc. Or just toggle directly to %11111011." />
+
+The deep payoff: **a chip with one adder can do both addition and
+subtraction**, because `A − B` is just `A + (−B)`, and `−B` is two
+operations the chip already knows. This is why nearly every modern CPU
+uses two's complement for signed integers. It's not the most intuitive
+representation; it's the cheapest one to build in silicon.
+
+## The asymmetric range
+
+Notice something quirky about the signed range: it's `-128` to `+127`.
+Not `-127` to `+127`. Off by one.
+
+Here's why. A byte has 256 distinct patterns. They have to split into:
+
+- **Zero** — needs one pattern.
+- **Positive numbers** — `1` through some max.
+- **Negative numbers** — `-1` through some min.
+
+Sign-magnitude tried to be symmetric and ended up with two zeros. Two's
+complement instead gives zero exactly one pattern (`%00000000`) and uses
+the leftover oddness on the negative side. So you get *127 positives + 1
+zero + 128 negatives = 256*. Tidy on the count, asymmetric on the eye.
+
+Practical consequence: `-(-128)` doesn't fit. `+128` is one past the top
+of signed range. If a program does `negate(value)` on `-128` and isn't
+careful, the result *wraps* and stays at `-128`. This is a real bug class.
+"Computing the absolute value" of `-128` as an 8-bit signed integer
+returns `-128`. The chip didn't lie; the bits just don't have anywhere
+to put `+128`.
+
+For 16-bit signed, the range is `-32,768` to `+32,767`. Same shape, same
+asymmetry, one more negative than positive. For 32-bit, `-2,147,483,648`
+to `+2,147,483,647`. Same.
+
+## What's next
+
+We've now got addition, subtraction, and negation — all using the same
+adder, all running on the same wires, just by choosing how we *interpret*
+the bit pattern. Next lesson we go deeper into arithmetic: how add and
+subtract actually walk the bits with carries; how multiply and divide
+work (and why they cost more); and the two operations that are *almost
+free*: shift left and shift right, which double and halve a number for
+the price of moving each wire one slot over.

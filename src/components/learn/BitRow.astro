@@ -1,0 +1,457 @@
+---
+interface Preset {
+  value: number;
+  label?: string;
+  note?: string;
+}
+
+interface Props {
+  bits?: 8 | 16;
+  value?: number;
+  locked?: number;
+  showPowers?: boolean;
+  showIndex?: boolean;
+  showDec?: boolean;
+  showHex?: boolean;
+  showBin?: boolean;
+  showSigned?: boolean;
+  label?: string;
+  presets?: Preset[];
+  presetsTitle?: string;
+}
+
+const {
+  bits = 8,
+  value = 0,
+  locked = bits,
+  showPowers = true,
+  showIndex = true,
+  showDec = true,
+  showHex = true,
+  showBin = true,
+  showSigned = false,
+  label,
+  presets,
+  presetsTitle = 'Quick set',
+} = Astro.props;
+
+const indices = Array.from({ length: bits }, (_, i) => bits - 1 - i);
+const bitOn = (i: number) => ((value >> i) & 1) === 1;
+const power = (i: number) => 2 ** i;
+const hexWidth = bits / 4;
+const nibbleCount = bits / 4;
+const nibbles: number[][] = [];
+for (let n = 0; n < nibbleCount; n++) {
+  nibbles.push(indices.slice(n * 4, (n + 1) * 4));
+}
+const initHex = value.toString(16).toUpperCase().padStart(hexWidth, '0');
+const hexDigits = initHex.split('');
+const signBit = 1 << (bits - 1);
+const toSigned = (v: number) => (v & signBit) ? v - (1 << bits) : v;
+const initSigned = toSigned(value);
+const gridTemplate =
+  'auto ' +
+  Array.from({ length: nibbleCount }, (_, n) =>
+    (n > 0 ? '0.5rem ' : '') + 'repeat(4, minmax(0, 1fr))'
+  ).join(' ');
+---
+
+<div
+  class="bitrow not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner @container"
+  data-bitrow
+  data-bits={bits}
+  data-locked={locked}
+  data-value={value}
+  style="container-type: inline-size;"
+>
+  {label && (
+    <div class="text-mono-tag mb-3">{label}</div>
+  )}
+
+  <div
+    class="bitrow-grid grid items-center gap-x-2 sm:gap-x-3 gap-y-1.5"
+    style={`grid-template-columns: ${gridTemplate};`}
+  >
+    {showIndex && (
+      <>
+        <div class="row-label">Bit</div>
+        {nibbles.map((nibble, n) => (
+          <>
+            {n > 0 && <div></div>}
+            {nibble.map((i) => (
+              <div
+                class:list={[
+                  'font-mono text-xs sm:text-sm tabular-nums text-center text-ink-300',
+                  i >= locked && 'opacity-30',
+                ]}
+              >
+                {i}
+              </div>
+            ))}
+          </>
+        ))}
+      </>
+    )}
+
+    <div class="row-label">LED</div>
+    {nibbles.map((nibble, n) => (
+      <>
+        {n > 0 && <div></div>}
+        {nibble.map((i) => {
+          const active = i < locked;
+          const on = bitOn(i);
+          return (
+            <button
+              type="button"
+              class:list={[
+                'bit group flex items-center justify-center rounded-md p-1.5 select-none',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/70',
+                active
+                  ? 'cursor-pointer hover:bg-ink-700/40'
+                  : 'cursor-not-allowed opacity-30',
+              ]}
+              data-bit={i}
+              data-active={active ? 'true' : 'false'}
+              data-on={on ? 'true' : 'false'}
+              aria-pressed={on ? 'true' : 'false'}
+              aria-label={`Bit ${i}, value ${power(i)}, ${on ? 'on' : 'off'}`}
+              disabled={!active}
+            >
+              <span class="led-bezel inline-flex items-center justify-center rounded-full">
+                <span class="led inline-block rounded-full transition-all duration-100" aria-hidden="true"></span>
+              </span>
+            </button>
+          );
+        })}
+      </>
+    ))}
+
+    {showPowers && (
+      <>
+        <div class="row-label">Bit value</div>
+        {nibbles.map((nibble, n) => (
+          <>
+            {n > 0 && <div></div>}
+            {nibble.map((i) => (
+              <div
+                class:list={[
+                  'font-mono text-xs sm:text-sm text-ink-200 tabular-nums text-center',
+                  i >= locked && 'opacity-30',
+                ]}
+              >
+                {power(i)}
+              </div>
+            ))}
+          </>
+        ))}
+      </>
+    )}
+
+    {showBin && (
+      <>
+        <div class="row-label format-label">Binary</div>
+        <div class="format-card binary-card">
+          {nibbles.map((nibble, n) => (
+            <>
+              {n > 0 && <div></div>}
+              {nibble.map((i) => {
+                const v = bitOn(i) ? 1 : 0;
+                return (
+                  <div
+                    class="digit"
+                    data-digit-bit={i}
+                    data-on={v ? '1' : '0'}
+                  >{v}</div>
+                );
+              })}
+            </>
+          ))}
+          <div class="prefix-line bin-prefix" style="grid-column: 1 / -1;">
+            <span class="value-chip">%<span data-out="bin">{value.toString(2).padStart(bits, '0')}</span></span>
+          </div>
+        </div>
+      </>
+    )}
+
+    {showHex && (
+      <>
+        <div class="row-label format-label">Hex</div>
+        <div class="format-card hex-card">
+          {nibbles.map((nibble, n) => (
+            <>
+              {n > 0 && <div></div>}
+              <div
+                class="hex-cell"
+                data-out-nibble={n}
+                style="grid-column: span 4;"
+              >{hexDigits[n]}</div>
+            </>
+          ))}
+          <div class="prefix-line hex-prefix" style="grid-column: 1 / -1;">
+            <span class="value-chip">$<span data-out="hex">{initHex}</span></span>
+          </div>
+        </div>
+      </>
+    )}
+
+    {showDec && (
+      <>
+        <div class="row-label format-label">Decimal</div>
+        <div class="format-card dec-card">
+          <div class="dec-cell" style="grid-column: 1 / -1;"><span class="value-chip" data-out="dec">{value}</span></div>
+        </div>
+      </>
+    )}
+
+    {showSigned && (
+      <>
+        <div class="row-label format-label">Signed</div>
+        <div class="format-card signed-card">
+          <div class="signed-cell" style="grid-column: 1 / -1;"><span class="value-chip" data-out="signed">{initSigned}</span></div>
+        </div>
+      </>
+    )}
+  </div>
+
+  {presets && presets.length > 0 && (
+    <div class="bitrow-presets mt-5 pt-4 border-t border-ink-700">
+      <div class="text-mono-tag mb-3">{presetsTitle}</div>
+      <ul class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {presets.map((p) => (
+          <li>
+            <button
+              type="button"
+              data-preset
+              data-preset-value={p.value}
+              class="w-full flex items-baseline gap-3 rounded-md border border-ink-700 bg-ink-900/60 hover:border-accent/60 hover:bg-ink-800 px-3 py-2 text-left"
+            >
+              <span class="font-mono text-base text-ink-100 tabular-nums shrink-0 min-w-[2.5rem]">{p.label ?? p.value}</span>
+              {p.note && (
+                <span class="text-xs text-ink-400 leading-snug">{p.note}</span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
+
+<style>
+  .bitrow .row-label {
+    font-family: theme('fontFamily.mono');
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: theme('colors.ink.400');
+    padding-right: 0.75rem;
+    text-align: right;
+  }
+  @media (min-width: 640px) {
+    .bitrow .row-label { font-size: 12px; }
+  }
+  .bitrow .format-card {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid theme('colors.ink.700');
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    row-gap: 0.5rem;
+    column-gap: inherit;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  }
+  .bitrow .format-label {
+    align-self: center;
+    margin-top: 0.5rem;
+  }
+  .bitrow .prefix-line {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    padding: 0.125rem 0;
+  }
+  .bitrow .bin-prefix { color: theme('colors.accent.DEFAULT'); }
+  .bitrow .hex-prefix { color: theme('colors.sky.300'); }
+  .bitrow .value-chip {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    padding: 2px 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+
+  .bitrow[data-bits='8'] .led {
+    width: clamp(16px, 4cqi, 36px);
+    height: clamp(16px, 4cqi, 36px);
+  }
+  .bitrow[data-bits='16'] .led {
+    width: clamp(12px, 2.2cqi, 28px);
+    height: clamp(12px, 2.2cqi, 28px);
+  }
+  .bitrow .led-bezel {
+    padding: 3px;
+    background: linear-gradient(145deg, theme('colors.ink.950'), theme('colors.ink.700'));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+  }
+  .bitrow .led {
+    background:
+      radial-gradient(circle at 35% 30%, #1a1d22 0%, #050608 65%, #000 100%);
+    box-shadow:
+      inset 0 0 6px rgba(0, 0, 0, 0.9),
+      inset 0 1px 1px rgba(0, 0, 0, 0.8);
+  }
+  .bitrow .bit[data-on='true'] .led {
+    background:
+      radial-gradient(circle at 35% 30%,
+        color-mix(in srgb, theme('colors.accent.DEFAULT') 80%, white) 0%,
+        theme('colors.accent.DEFAULT') 55%,
+        theme('colors.accent.dim') 100%);
+    box-shadow:
+      0 0 18px theme('colors.accent.DEFAULT'),
+      0 0 4px theme('colors.accent.DEFAULT'),
+      inset 0 0 6px rgba(255, 255, 255, 0.4);
+  }
+
+
+  .bitrow .digit,
+  .bitrow .hex-cell,
+  .bitrow .dec-cell,
+  .bitrow .signed-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: theme('fontFamily.mono');
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 4px 0;
+  }
+  .bitrow .digit {
+    color: theme('colors.ink.500');
+  }
+  .bitrow .digit[data-on='1'] {
+    color: theme('colors.accent.DEFAULT');
+  }
+  .bitrow .hex-cell {
+    color: theme('colors.sky.300');
+  }
+  .bitrow .dec-cell {
+    color: theme('colors.amber.300');
+  }
+  .bitrow .signed-cell {
+    color: theme('colors.rose.300');
+  }
+
+</style>
+
+<script>
+  const wireBitRow = (root: HTMLElement) => {
+    if (root.dataset.wired === '1') return;
+    root.dataset.wired = '1';
+
+    const bits = Number(root.dataset.bits ?? '8');
+    const nibbleCount = bits / 4;
+    const hexWidth = bits / 4;
+    const decOut = root.querySelector<HTMLElement>('[data-out="dec"]');
+    const signedOut = root.querySelector<HTMLElement>('[data-out="signed"]');
+    const decLineOut = root.querySelector<HTMLElement>('[data-out="dec-line"]');
+    const hexLineOut = root.querySelector<HTMLElement>('[data-out="hex"]');
+    const binLineOut = root.querySelector<HTMLElement>('[data-out="bin"]');
+    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-bit]'));
+    const digitCells = Array.from(root.querySelectorAll<HTMLElement>('[data-digit-bit]'));
+    const hexCells = Array.from(root.querySelectorAll<HTMLElement>('[data-out-nibble]'));
+
+    const render = () => {
+      let value = 0;
+      for (const btn of buttons) {
+        if (btn.dataset.on === 'true') value |= 1 << Number(btn.dataset.bit);
+      }
+      root.dataset.value = String(value);
+
+      if (decOut) decOut.textContent = String(value);
+      if (signedOut) {
+        const signBit = 1 << (bits - 1);
+        const signedVal = (value & signBit) ? value - (1 << bits) : value;
+        signedOut.textContent = String(signedVal);
+      }
+      if (decLineOut) decLineOut.textContent = String(value);
+      if (binLineOut) binLineOut.textContent = value.toString(2).padStart(bits, '0');
+      if (hexLineOut) hexLineOut.textContent = value.toString(16).toUpperCase().padStart(hexWidth, '0');
+
+      for (const cell of digitCells) {
+        const idx = Number(cell.dataset.digitBit);
+        const v = (value >> idx) & 1;
+        const next = String(v);
+        if (cell.textContent !== next) {
+          cell.textContent = next;
+          cell.dataset.on = next;
+        }
+      }
+
+      for (const cell of hexCells) {
+        const n = Number(cell.dataset.outNibble);
+        const shift = (nibbleCount - 1 - n) * 4;
+        const nibVal = (value >> shift) & 0xf;
+        const next = nibVal.toString(16).toUpperCase();
+        if (cell.textContent !== next) {
+          cell.textContent = next;
+        }
+      }
+    };
+
+    for (const btn of buttons) {
+      if (btn.dataset.active !== 'true') continue;
+      btn.addEventListener('click', () => {
+        const on = btn.dataset.on === 'true';
+        const next = !on;
+        btn.dataset.on = next ? 'true' : 'false';
+        btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+        const idx = btn.dataset.bit ?? '?';
+        const power = 2 ** Number(idx);
+        btn.setAttribute('aria-label', `Bit ${idx}, value ${power}, ${next ? 'on' : 'off'}`);
+        render();
+      });
+    }
+
+    const setValue = (value: number) => {
+      for (const btn of buttons) {
+        const idx = Number(btn.dataset.bit);
+        const next = ((value >> idx) & 1) === 1;
+        btn.dataset.on = next ? 'true' : 'false';
+        btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+        const power = 2 ** idx;
+        btn.setAttribute('aria-label', `Bit ${idx}, value ${power}, ${next ? 'on' : 'off'}`);
+      }
+      render();
+    };
+
+    const presetButtons = root.querySelectorAll<HTMLButtonElement>('[data-preset]');
+    for (const btn of presetButtons) {
+      btn.addEventListener('click', () => {
+        const v = Number(btn.dataset.presetValue ?? '0');
+        setValue(v);
+      });
+    }
+
+    render();
+  };
+
+  const init = () => {
+    document.querySelectorAll<HTMLElement>('[data-bitrow]').forEach(wireBitRow);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

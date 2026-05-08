@@ -1,0 +1,84 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const all = (await getCollection('lessons', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order
+);
+
+type Lesson = (typeof all)[number];
+
+const seriesMap = new Map<string, { title: string; lessons: Lesson[] }>();
+for (const l of all) {
+  const key = l.data.series;
+  const entry = seriesMap.get(key) ?? { title: l.data.seriesTitle, lessons: [] };
+  entry.lessons.push(l);
+  seriesMap.set(key, entry);
+}
+const seriesList = Array.from(seriesMap.entries());
+---
+
+<BaseLayout
+  title="Learn"
+  description="Hands-on lessons by Carl Edwards that build up the smallest useful model of a computer — from a single bit to a working 8-bit CPU running real code."
+>
+  <section class="container-wide py-20">
+    <div class="text-mono-tag mb-4">Learn</div>
+    <h1 class="text-4xl sm:text-5xl font-semibold text-ink-100 tracking-tight">
+      From bits to a real machine.
+    </h1>
+    <p class="mt-4 max-w-2xl text-ink-300">
+      Hands-on lessons that build up the smallest useful model of a
+      computer — starting from a single bit and ending with a working
+      8-bit CPU running real code. Click things, watch them change, build
+      intuition. Friendly even if you've never written code.
+    </p>
+  </section>
+
+  <section class="container-wide pb-24 space-y-12">
+    {seriesList.map(([key, { title, lessons }]) => (
+      <div id={key} class="rounded-lg border border-ink-800 bg-ink-900 overflow-hidden">
+        <div class="p-6 sm:p-8 border-b border-ink-800">
+          <div class="text-mono-tag mb-2">Series</div>
+          <h2 class="text-2xl font-semibold tracking-tight text-ink-100">
+            {title}
+          </h2>
+          <p class="mt-2 text-ink-400 text-sm">
+            {lessons.length} lesson{lessons.length === 1 ? '' : 's'}
+          </p>
+        </div>
+        <ul class="divide-y divide-ink-800">
+          {lessons.map((l) => (
+            <li>
+              <a
+                href={`/learn/${l.slug}/`}
+                class="group flex flex-col gap-2 p-6 sm:flex-row sm:items-baseline sm:gap-6 hover:bg-ink-800/30"
+              >
+                <span class="font-mono text-xs uppercase tracking-wider text-ink-500 sm:w-20 shrink-0">
+                  {String(l.data.order).padStart(2, '0')}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="text-lg text-ink-100 font-medium group-hover:text-accent tracking-tight">
+                    {l.data.title}
+                  </div>
+                  <p class="mt-1.5 text-sm text-ink-400 leading-relaxed">
+                    {l.data.summary}
+                  </p>
+                  {l.data.tags.length > 0 && (
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      {l.data.tags.slice(0, 4).map((t) => (
+                        <span class="font-mono text-[10px] uppercase tracking-wider text-ink-500 bg-ink-800/60 px-2 py-0.5 rounded">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+</BaseLayout>

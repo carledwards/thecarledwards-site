@@ -1,0 +1,211 @@
+---
+title: Bit ops — AND, OR, XOR, NOT
+series: binary
+seriesTitle: Binary, by hand
+order: 3
+summary: Now we steer the wires. Four operations — AND, OR, XOR, NOT — are the workhorses of bit-level work. Each one has a real-world job that turns out to be the whole reason these operations exist.
+tags: ['binary', 'bit-ops', 'masks']
+---
+
+import BitOp from '../../../components/learn/BitOp.astro';
+
+So far we've stared at bytes. We've watched them count, we've seen them in
+binary and hex, we've named the wires. Now we start *doing things* to them.
+
+There are exactly **three** operations you'll use over and over to push and
+pull individual bits in a byte: **AND**, **OR**, and **XOR**. Plus a unary
+fourth, **NOT**, which just flips everything. That's it. Four operations.
+Every bit-level trick in every program in the world is built from these.
+
+Each one has a *job*. We'll do them one at a time, with a use case attached
+so the operation isn't abstract.
+
+## OR — turning bits on
+
+You've got a byte. You want to turn on a specific bit, but leave the others
+exactly as they are. Maybe you're driving an LED panel and you want to
+*light* LED 3 without disturbing the others.
+
+The tool for that is **OR**. Its rule is one sentence:
+
+> A result bit is `1` if **either** input bit is `1`.
+
+Here's the truth table — you only need to memorize two columns:
+
+| A | B | A OR B |
+| :-: | :-: | :-: |
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+Practically: `OR` *adds* `1`-bits without ever taking any away. It's a
+one-way ratchet — bits can go on, never off. Try it. Set up an A and a B,
+then read the result.
+
+<BitOp op="OR" initialA={0b10100000} initialB={0b00000110} label="OR — A | B turns ON every bit set in B" />
+
+The B byte here is acting as a **mask** — a pattern that says "set these
+specific bits." The result keeps every `1` that was already in A and adds
+the `1`s from B. Click around and notice: turning a B bit *off* never
+removes anything from the result that A put there.
+
+This is the canonical "set a flag" pattern. If a CPU's status register has
+8 flags packed into one byte, and you want to turn on flag #3 without
+touching the others:
+
+```
+status  =  status  OR  %00001000
+```
+
+Bit 3 lights up. Bits 0–2 and 4–7 are exactly what they were.
+
+## AND — turning bits off
+
+The mirror operation is **AND**. Its job is the *opposite* of OR: turn
+specific bits off without touching the others.
+
+> A result bit is `1` only if **both** input bits are `1`.
+
+| A | B | A AND B |
+| :-: | :-: | :-: |
+| 0 | 0 | 0 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+Read that table again: the result is `0` unless *both* inputs are `1`. So
+ANDing with a `0` always wipes a bit out, and ANDing with a `1` always
+preserves whatever was there. That second half is the key — `1` in the
+mask is the "leave alone" signal.
+
+<BitOp op="AND" initialA={0b11111111} initialB={0b00001111} label="AND — A & B keeps only the bits where B is 1" />
+
+Set A to all-ones and B to `%00001111` (low nibble full). The result is
+just the low nibble of A. The high nibble got zeroed because B's high
+nibble was zero.
+
+This is the **clear-bit** pattern. If you want to turn off bit 3 of
+`status` and leave the rest alone:
+
+```
+status  =  status  AND  %11110111
+```
+
+The mask is "all ones except bit 3." Wherever you put a `0` in the mask,
+the result is forced to `0`. Wherever you put a `1`, the original bit
+passes through unchanged.
+
+A useful trick: ANDing a byte with `%00001111` (`$0F`) extracts just the
+low nibble. ANDing with `%11110000` (`$F0`) extracts just the high. This
+is how programs split a packed byte into its parts.
+
+## XOR — toggling bits, and finding differences
+
+**XOR** ("exclusive or") is the strangest of the three at first, but the
+most useful once you see what it does.
+
+> A result bit is `1` if **exactly one** of the inputs is `1`.
+
+| A | B | A XOR B |
+| :-: | :-: | :-: |
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+Read that as: the result is `1` if A and B *disagree*, `0` if they agree.
+That is the single most useful way to think about XOR — it's a
+disagreement detector.
+
+<BitOp op="XOR" initialA={0b10110010} initialB={0b00001111} label="XOR — A ^ B flips every bit where B is 1" />
+
+There are two sides to this same operation:
+
+**1. Toggle a bit.** XORing with a `1` flips the corresponding bit;
+XORing with a `0` leaves it alone. So XOR is the **toggle** operator. If
+you want to flip bit 3 of `status` regardless of its current state:
+
+```
+status  =  status  XOR  %00001000
+```
+
+Each call flips that one bit. Two calls cancel out. (OR couldn't do this;
+once OR turns a bit on, only AND can turn it off.)
+
+**2. Compare two bytes.** XOR two values together and the result tells you
+exactly where they differ. Bits that match → `0`. Bits that differ → `1`.
+If `A XOR B` is zero, they're identical. If it has bits set, those are
+the positions where they disagree. This is how memory checks, parity bits,
+and a thousand cryptography building blocks work under the hood.
+
+A famous corollary: `(A XOR B) XOR B == A`. Apply XOR twice with the same
+mask and you get back where you started. Try it: set A to anything, set B
+to anything, hit XOR, then click each `1` in B once more — you're back to
+the original A. This is why XOR is the basis of *every* one-time pad
+cipher in existence.
+
+## NOT — flip them all
+
+The simplest of the four. **NOT** is unary — it takes one input and flips
+every single bit. There's no mask, no second operand.
+
+> Every `1` becomes `0`. Every `0` becomes `1`.
+
+<BitOp op="NOT" initialA={0b00001111} label="NOT — every bit inverts" />
+
+Click some bits in A and watch the result mirror it. Wherever A is on,
+the result is off, and vice versa.
+
+NOT is sometimes called the **one's complement**. We'll meet a related
+operation called the **two's complement** in the next lesson — it's how
+computers represent negative numbers, and it's built right on top of
+NOT plus a `+1`.
+
+You can also build NOT out of XOR if you ever needed to. `A XOR
+%11111111` (XOR with all-ones) flips every bit of A — same result. NOT is
+just the convenient single-operation form.
+
+## Putting it together — building a practical mask
+
+Here's a small puzzle that combines what you've got. Suppose you want to
+take a byte and:
+
+1. **Force bit 7 on** (regardless of what it was).
+2. **Force bit 0 off** (regardless of what it was).
+3. **Toggle bit 3.**
+4. Leave bits 1, 2, 4, 5, 6 exactly as they are.
+
+That's three different jobs at once. The recipe a real programmer would
+write:
+
+```
+result =  ((value  OR   %10000000)   ; step 1: force bit 7 on
+                  AND  %11111110)    ; step 2: force bit 0 off
+                  XOR  %00001000     ; step 3: toggle bit 3
+```
+
+Each line uses exactly the operation that does that one job. OR forces
+bits on. AND forces bits off (with a `0` in the mask). XOR toggles the
+bits where there's a `1`. Stack them in the right order and you can
+compose any pattern you want.
+
+<BitOp op="OR" initialA={0b01010101} initialB={0b10000000} label="Try the puzzle: start with $55 in A, then run each step." />
+
+Run the steps in your head with the widget above:
+
+- A is `%01010101`. OR with `%10000000`. Bit 7 turns on. Result `%11010101`.
+- Now mentally AND with `%11111110`. Bit 0 turns off. Result `%11010100`.
+- Now mentally XOR with `%00001000`. Bit 3 flips (was 0 → now 1). Final `%11011100`.
+
+Three operations, each one with a clear job. That's the whole vocabulary.
+
+## What's next
+
+We can now *make* any byte we want by stacking ANDs, ORs, and XORs. But
+something interesting happens when you start *adding* and *subtracting*:
+you can run off the end of a byte. Bit 7 plus one carry has nowhere to
+go. Lesson 4 is about **overflow**, **underflow**, and the clever trick
+called **two's complement** that lets a byte represent negative numbers
+— and the limit it gives you (`-128` to `+127`, not `-255` to `+255`,
+and that's interesting).

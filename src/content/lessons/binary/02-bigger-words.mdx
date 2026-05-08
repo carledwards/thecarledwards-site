@@ -1,0 +1,145 @@
+---
+title: Bigger words
+series: binary
+seriesTitle: Binary, by hand
+order: 2
+summary: Eight bits isn't always enough. Glue two bytes together — that's a word, sixteen bits, range 0 to 65,535. Plus what's actually moving on a real chip when those bits flip, and why a wider CPU gets more done per tick.
+tags: ['binary', 'fundamentals', 'words', 'voltage']
+---
+
+import BitRow from '../../../components/learn/BitRow.astro';
+import BitCounter from '../../../components/learn/BitCounter.astro';
+
+A byte tops out at `255`. That's plenty for one character of text or one
+shade of gray — but not for everything. Counting students in a school,
+pixels on a screen, or a calendar year already busts that ceiling. One byte
+runs out fast.
+
+The fix is the obvious one. Glue two bytes together.
+
+## Two bytes, side by side
+
+<BitRow bits={16} locked={16} label="Two bytes — sixteen bits — one word." />
+
+Sixteen bits gives you `0` to `65,535`. That's `256 × 256` — 256 possible
+values for the left byte, 256 for the right, multiplied. Same doubling rule
+from lesson 1; we just kept doubling for eight more steps.
+
+This grouping has a name: a **word**. (The term is a little slippery —
+modern 64-bit machines sometimes call 64 bits "a word." In this lesson, by
+"word" we always mean *sixteen* bits, the historic 8-bit/16-bit boundary.)
+
+Look at the widget. The eight LEDs on the left are the **high byte**; the
+eight on the right are the **low byte**. The hex line shows four digits
+now — one per nibble, just like before, two per byte. Some patterns to
+internalize:
+
+- `$FFFF` — every wire on. Biggest possible value: `65535`.
+- `$00FF` — low byte full, high byte empty. Same as `255`.
+- `$FF00` — high byte full, low byte empty. That's `256 × 255 = 65280`.
+- `$0100` — just the lowest bit of the high byte on. That's `256` — and it
+  rolls into a place the low byte alone could never reach.
+
+Every value bigger than 255 *needs* the high byte. Every value 255 or less
+fits in the low byte alone, with the high byte sitting at zero.
+
+## Each bit is a wire
+
+Now's a good time to say what's actually moving inside the chip when these
+LEDs change. The LEDs are not metaphorical — they are the most honest
+visualization there is.
+
+Inside a real computer, a bit isn't a light, it's a *voltage on a tiny
+metal wire*. A high voltage — historically `+5V`, more like `+3.3V` or
+lower on modern chips — means **on**, which we call `1`. A low voltage
+(`0V`, connected to ground) means **off**, which we call `0`. That's it.
+The whole edifice of computing is built on top of "is this wire holding a
+voltage right now or not."
+
+When you toggle an LED above, you're playing the role of an electron. On
+a real CPU, one circuit drives those wires; another circuit reads them.
+The LEDs in this lesson are doing the *exact same job*: making it visible
+whether a wire is high or low. (This is also why a row of LEDs has been a
+favorite debugging tool since literally the 1950s — chip designers were
+not going to argue with something that worked.)
+
+So: picture the 16-bit word above as **sixteen wires**, side by side, each
+carrying a voltage. The "value" of the word is just *which combination of
+wires happen to be high right now*. That's the entire data model.
+
+This is also why we can later turn specific bits on and off on purpose
+(next lesson) — we're literally raising and lowering specific wires.
+
+## More wires, more done per step
+
+Here's the practical reason word size matters.
+
+A CPU has a fixed number of wires it can chew on at once. An 8-bit CPU
+reads or writes 8 wires per step — one byte. A 16-bit CPU does 16 wires
+per step — one word. A 32-bit CPU does 32. A 64-bit CPU — the kind in
+your laptop and phone — does 64.
+
+That sounds boring stated abstractly, so consider what it costs to add two
+big numbers on an 8-bit CPU:
+
+```
+Goal:  1000 + 250
+
+  1000 → $03 E8     (high byte: 3, low byte: 232)
+   250 → $00 FA     (high byte: 0, low byte: 250)
+
+Step 1:  $E8 + $FA = $1E2.  Bottom two hex digits → $E2.  Carry out → 1.
+Step 2:  $03 + $00 + carry = $04.
+
+Result:  $04 E2  =  1250.   ✓
+```
+
+Three operations: add low, add high, mind the carry. The chip can only see
+one byte at a time, so the *programmer* — or the compiler — has to do the
+high/low choreography by hand.
+
+On a 16-bit CPU, you ask the same chip to add two 16-bit numbers and it
+does it **in one step** — because all 16 wires are wired into the adder
+at once. No splitting, no carry-by-hand. Exact same math, less work per
+step.
+
+The pattern generalizes:
+
+- **8-bit machine** — one byte per step. Anything bigger is multi-step.
+- **16-bit machine** — one word per step. Bytes are cheap, words are too.
+- **64-bit machine** — eight bytes per step. Whole memory addresses and
+  big integers all fit in one register.
+
+When somebody says a CPU "is 64-bit," this is most of what they mean.
+Each register holds 64 wires, and one instruction operates on all 64 at
+once. Wider registers don't make individual operations *faster* in
+clock-time terms — they let each operation chew through *more bits in the
+same tick*.
+
+## Watch a word count
+
+Lesson 1's counter visited every value `0` to `255` in a few seconds. A
+16-bit word has `65,536` values — 256 times more — so its natural lap
+takes much longer at human-watchable speeds. Don't wait around. Hit
+**Step +1** a few times first.
+
+<BitCounter bits={16} initialSpeed="fast" label="A word counts. Watch how rarely the high byte ticks." />
+
+Notice how lazy the high byte is. Bit 8 — the lowest bit of the high byte
+— flips only once every **256** counts. Bit 15 — the leftmost — flips
+only once every **32,768** counts. The rule is the same as before: each
+bit is twice as slow as its neighbor. We just stacked the chain taller.
+
+Hit **Play** on fast and let it run. The low byte (right side) becomes a
+blur; the high byte (left side) climbs gently. The shape isn't new — it's
+the same cascade as one byte, just one byte tall instead of half.
+
+## What's next
+
+We've got the static picture down: bits, bytes, words, and a feel for what
+voltages on wires look like.
+
+Next lesson we start *operating* on bits — turning specific ones on and
+off, testing whether a bit is set, and meeting the three workhorses of
+bit-level work: **AND**, **OR**, and **XOR**. That's where you stop just
+*observing* the wires and start *steering* them.

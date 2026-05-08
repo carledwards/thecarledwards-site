@@ -1,0 +1,245 @@
+---
+title: Bits & bytes
+series: binary
+seriesTitle: Binary, by hand
+order: 1
+summary: Start with a single light. Add another, then another, until you have eight — a byte. Click your way to a feel for binary, no math required.
+tags: ['binary', 'fundamentals']
+---
+
+import BitRow from '../../../components/learn/BitRow.astro';
+import BitCounter from '../../../components/learn/BitCounter.astro';
+
+This is lesson 1 of a series with a destination. We're going to build up
+the smallest useful model of a computer — bits, bytes, the operations
+that move them around — and by the end you'll be able to read what's
+actually happening inside a small CPU running a real program. That's the
+shape of the journey. This first lesson is about *bits*, the most
+primitive thing in the whole stack.
+
+Computers count differently than we do. We have ten fingers, so we count in
+tens. A computer has switches — and a switch only has two positions: **off**
+or **on**. That's it. Every photo, song, spreadsheet, and game in the world
+gets built up out of switches like that.
+
+We're going to build that intuition by clicking lights. Each light below is a
+single switch. Click it. Watch the numbers update.
+
+## One light
+
+This is one bit. **Bit** is just the name for one of those switches.
+
+It can be **off** (we call that `0`) or **on** (we call that `1`). That's the
+whole vocabulary.
+
+<BitRow bits={8} locked={1} label="Click the rightmost light." />
+
+When the light is off, the value is `0`. When it's on, the value is `1`. The
+hex column says the same thing in a different notation; ignore it for now —
+we'll come back to that.
+
+One light gets us two possible values: 0 or 1. Not very expressive yet.
+
+## Two lights
+
+Now we have two switches. Each one is independent — you can have any
+combination: both off, just the right one, just the left one, or both on.
+
+<BitRow bits={8} locked={2} label="Try each combination. There are four." />
+
+Notice the pattern in the labels under each light: `1` and `2`. Those are the
+**values** each light contributes when it's on. Add up the lit ones — that's
+the decimal number on the bottom.
+
+- Both off → 0
+- Right on → 1
+- Left on → 2
+- Both on → 3
+
+Two switches give us **four** possible values: 0, 1, 2, 3. Each new switch
+doubles what we can express.
+
+## Four lights — a nibble
+
+Add two more switches. Now each new light is worth twice as much as the one
+to its right: `1, 2, 4, 8`. That doubling — those *powers of two* — is the
+whole reason binary works. Every position is just the previous one, doubled.
+
+<BitRow bits={8} locked={4} label="Try to make 13. (Hint: 8 + 4 + 1.)" />
+
+This group of four bits has a name: a **nibble**. Yes, really. It can hold any
+value from 0 to 15.
+
+A useful trick: light up *every* one of the four bits. The decimal reads 15.
+That's `1 + 2 + 4 + 8` — every power of two up to that point, summed. There's
+a tidy rule hiding in there: the maximum a row of `n` bits can hold is always
+*one less* than the next power of two. Four bits → max is 15, and 16 is the
+next doubling.
+
+## Eight lights — a byte
+
+Eight bits in a row has a name too, and it's the most important word in this
+whole series: a **byte**.
+
+<BitRow bits={8} locked={8} label="All eight switches are unlocked now." />
+
+The lights from right to left are worth `1, 2, 4, 8, 16, 32, 64, 128`. Light
+them all and you get **255** — the largest number a single byte can hold.
+Turn them all off and you get **0**, the smallest. So a byte holds any whole
+number from `0` to `255`. That's 256 distinct values.
+
+Why 256 and not 255? Because zero counts as one of them. (Off-by-one is the
+oldest joke in computing for a reason.)
+
+Almost everything you've ever touched on a computer — a single character of
+text, a shade of red in a photo, the volume of one moment of a song — is at
+some level a byte, or a small handful of bytes glued together.
+
+## Hex, in passing
+
+Look at the **hex** row in the widget above. Eight little binary digits get
+squeezed into just **two** bigger digits. That's not magic — it's the same
+nibble idea, used as compression.
+
+A nibble (four bits) holds 16 possible values: `0` through `15`. Decimal
+only gives us ten symbols (`0`–`9`), so when we want to write all 16 values
+in a single character we just keep going past `9` with letters: `A, B, C, D,
+E, F`.
+
+Same number, two ways of writing it:
+
+| Decimal | Hex  |
+| :-----: | :--: |
+|   `0`   | `0`  |
+|   `1`   | `1`  |
+|   `2`   | `2`  |
+|   `3`   | `3`  |
+|   `4`   | `4`  |
+|   `5`   | `5`  |
+|   `6`   | `6`  |
+|   `7`   | `7`  |
+|   `8`   | `8`  |
+|   `9`   | `9`  |
+|  `10`   | `A`  |
+|  `11`   | `B`  |
+|  `12`   | `C`  |
+|  `13`   | `D`  |
+|  `14`   | `E`  |
+|  `15`   | `F`  |
+|  `16`   | `10` |
+|  `17`   | `11` |
+|  `18`   | `12` |
+|   …     |  …   |
+|  `254`  | `FE` |
+|  `255`  | `FF` |
+
+Each row is one number, written two ways. Counting rules are the ones you
+already know: start at `0`, add one at a time, roll over to a new digit
+when you run out of single symbols. Decimal runs out at `9` and rolls to
+`10`. Hex doesn't run out until `F`, and *then* rolls to `10` — which here
+means *sixteen*, not ten. Same notation, bigger alphabet.
+
+And notice the bottom of the table: `255` in decimal is `FF` in hex. That's
+the largest value a single byte can hold — *both nibbles full*. Hex makes
+that visually obvious in a way decimal hides.
+
+That's **hexadecimal**, or just *hex* — base 16. One hex digit per nibble,
+two hex digits per byte.
+
+<BitRow
+  bits={8}
+  locked={8}
+  label="Each nibble is one hex digit."
+  presets={[
+    { value: 15,  label: '$0F', note: '15 — low nibble full' },
+    { value: 240, label: '$F0', note: '240 — high nibble full' },
+    { value: 255, label: '$FF', note: '255 — both full' },
+    { value: 195, label: '$C3', note: '195 — 1100 0011' },
+    { value: 165, label: '$A5', note: '165 — 1010 0101' },
+    { value: 16,  label: '$10', note: '16 — sixteen, not ten' },
+  ]}
+  presetsTitle="Try a few hex values"
+/>
+
+Click `$0F` — the low nibble lights up `1111`, the high nibble stays dark.
+Click `$F0` — opposite. Click `$FF` — both full, and the decimal reads `255`.
+The hex is just a compact label for whatever pattern the nibbles are in.
+
+The leading `$` is one of a few notations old-school programmers use to mark
+"this is hex." You'll also see `0x` (`0xFF`) and `%h` and just plain
+trailing-`h` (`FFh`), depending on the era and the language. They all mean
+the same thing.
+
+Why bother? Try writing out `%11010010` versus `$D2`. Both are the same byte;
+hex is four times shorter and easier to read out loud — `"D-two"` vs the
+binary tongue-twister. Once you've stared at enough memory dumps and
+register values, you stop translating in your head and just *see* `$F0` as
+"top nibble lit."
+
+We'll come back to hex when we start doing arithmetic. For now: just notice
+that the two hex digits track the two nibbles, exactly.
+
+## Watch it count
+
+Here's where binary stops feeling like a list of separate switches and starts
+feeling like a *system*. The widget below counts up — `0, 1, 2, 3, …` — and
+the LEDs follow.
+
+<BitCounter bits={8} initialSpeed="slow" label="Press Play. Or step one at a time to really see the pattern." />
+
+Hit **Play** on slow speed and just watch for a few seconds. There's a rule
+hiding in plain sight, and once you see it you can't un-see it:
+
+> **Every time a bit turns off, the bit to its left flips.**
+
+The rightmost bit flips on every count. The next one over flips half as
+often (every 2 counts). The next, half again (every 4). Then 8, 16, 32, 64,
+128. Each bit's "rhythm" is exactly twice as slow as its neighbor's, and that
+chain of doublings is what lets eight little switches count all the way to
+255 without any of them being special.
+
+This is the *carry*: when a bit rolls over from 1 back to 0, it nudges the
+next bit. It's the same thing your odometer does when it goes from 9 back to
+0 and bumps the digit beside it. Binary just does it with two states instead
+of ten, so it has to do it more often.
+
+Try **Step +1** a few times and pay attention to bit 0. Now do it a few more
+times and watch bit 1 — see how it flips half as often? Now bit 2. Each one
+is the heartbeat of the one below it, slowed down by half.
+
+Speed it up. The whole row turns into a little cascade — the right side a
+blur, the left side barely moving. Let it run all the way to 255 and one more
+step: every LED goes off at once, and the count rolls back to 0. That's an
+eight-bit byte's whole life cycle, in a few seconds.
+
+## Try it
+
+Don't take my word for any of this. Try to make these specific numbers:
+
+1. **0** — every light off.
+2. **1** — just the rightmost light.
+3. **128** — just the leftmost light.
+4. **255** — every light on.
+5. **42** — the answer to everything. (Hint: `32 + 8 + 2`.)
+6. **170** — alternating, starting from the leftmost. (Why does this one
+   look like a stripe?)
+
+<BitRow
+  bits={8}
+  locked={8}
+  label="Your scratchpad."
+  presets={[
+    { value: 0,   note: 'every light off' },
+    { value: 1,   note: 'just rightmost' },
+    { value: 128, note: 'just leftmost' },
+    { value: 255, note: 'every light on' },
+    { value: 42,  note: '32 + 8 + 2' },
+    { value: 170, note: 'alternating stripe' },
+  ]}
+  presetsTitle="Need the answer?"
+/>
+
+If those felt natural — even just the first four — you've got the model.
+You're now thinking the way the computer thinks.
+
+Next we'll look at what happens when one byte isn't enough.
