@@ -32,9 +32,9 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
   data-bus-trace
   data-transactions={txJson}
 >
-  {/* Top narration — what Bill is asking Emily */}
+  {/* Top narration — what the CPU is doing on the bus */}
   <div class="narration" data-narration>
-    Bill says to Emily, “Save <code>$0A</code> in box <code>$8002</code>.”
+    The CPU writes <code>$0A</code> to memory address <code>$8002</code>.
   </div>
 
   {/* Clock strip */}
@@ -56,7 +56,6 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
   <div class="bus-stage">
     <div class="block cpu-block">
       <div class="block-title">CPU</div>
-      <div class="block-name">"Bill"</div>
       <div class="cpu-acc" data-acc>
         <span class="acc-label">A</span>
         <span class="acc-value" data-out="acc">$00</span>
@@ -90,7 +89,6 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
 
     <div class="block mem-block">
       <div class="block-title">MEMORY</div>
-      <div class="block-name">"Emily"</div>
       <div class="mem-cells">
         {Array.from({ length: 8 }, (_, i) => {
           const addr = (baseAddr + i).toString(16).toUpperCase().padStart(4, '0');
@@ -570,8 +568,8 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
       const addr = fmt4(0x8000 + tx.i);
       const byte = fmt2(tx.byte);
       narration.innerHTML = tx.rw === 'W'
-        ? `Bill says to Emily, &ldquo;Save <code>${byte}</code> in box <code>${addr}</code>.&rdquo;`
-        : `Bill asks Emily, &ldquo;What&rsquo;s in box <code>${addr}</code>?&rdquo;`;
+        ? `The CPU writes <code>${byte}</code> to memory address <code>${addr}</code>.`
+        : `The CPU reads from memory address <code>${addr}</code>.`;
     };
 
     let txIdx = 0;
@@ -626,7 +624,7 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
           if (isWrite) {
             memValues[tx.i] = tx.byte;
             if (cellValEl) cellValEl.textContent = fmt2(tx.byte);
-            if (caption) caption.textContent = `Emily takes ${fmt2(tx.byte)} into box ${fmt4(addrFull)}.`;
+            if (caption) caption.textContent = `Memory takes ${fmt2(tx.byte)} into cell ${fmt4(addrFull)}.`;
           } else {
             const v = memValues[tx.i];
             if (out.data) out.data.textContent = fmt2(v);
@@ -641,7 +639,7 @@ const wavePath = `M0,34 L0,6 ${waveSegments.join(' ')}`;
               writeAcc(v);
               acc?.setAttribute('data-active', 'read');
             }, 1450);
-            if (caption) caption.textContent = `Emily puts ${fmt2(v)} on the data lines; the byte travels to A.`;
+            if (caption) caption.textContent = `Memory puts ${fmt2(v)} on the data lines; the byte travels to A.`;
           }
           break;
         }

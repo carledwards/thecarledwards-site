@@ -3,21 +3,22 @@ title: The CPU's pockets — A, X, Y, P, PC, SP
 series: computer
 seriesTitle: How a computer works
 order: 2
-summary: Bill keeps a small handful of bytes inside himself — way faster to reach than going out to memory. Meet his six pockets — three for working values (A, X, Y) and three for bookkeeping (P, PC, SP) — then watch a small program use them.
+summary: The CPU keeps a small handful of bytes inside itself — way faster to reach than going out to memory. Meet its six on-chip registers — three for working values (A, X, Y) and three for bookkeeping (P, PC, SP) — then watch a small program use them.
 tags: ['cpu', '6502', 'registers', 'instructions']
 ---
 
 import ProgramTrace from '../../../components/learn/ProgramTrace.astro';
 import Callout from '../../../components/learn/Callout.astro';
 
-Last lesson Bill (the CPU) read and wrote bytes to Emily (memory) over a
-small handful of wires. We snuck in one detail that's worth coming back
-to: there was a chip labeled **A** inside Bill, holding the byte he was
+Last lesson the CPU read and wrote bytes to a memory chip over a small
+handful of wires. We snuck in one detail that's worth coming back to:
+there was a slot labeled **A** inside the CPU, holding the byte it was
 about to send out — or had just received. That `A` is a **register**.
 
-This lesson is about Bill's pockets. The 6502 has three useful ones for
-holding bytes (`A`, `X`, `Y`), plus a couple of bookkeeping pockets
-(`PC`, `SP`, `P`) that the chip uses to keep track of itself.
+This lesson is about the CPU's on-chip registers. The 6502 has three
+useful ones for holding bytes (`A`, `X`, `Y`), plus a couple of
+bookkeeping ones (`PC`, `SP`, `P`) that the chip uses to keep track of
+itself.
 
 <Callout title="A note about specifics" variant="aside">
 This lesson is specifically about the **6502**. Every CPU you've ever
@@ -147,8 +148,8 @@ the program made a decision.
 The 6502 has a tiny built-in **stack** for saving and restoring values
 during subroutine calls. `SP` (the stack pointer) is the 8-bit address
 of the top of that stack. We'll meet it properly when we cover
-subroutines — for now, just know there's one more pocket Bill keeps for
-bookkeeping.
+subroutines — for now, just know there's one more on-chip register the
+CPU uses for bookkeeping.
 
 ## Watch a program run
 
@@ -175,8 +176,8 @@ Things to notice as you watch:
   No bus traffic. No wires moving. That's the load/operate part of
   load/operate/store. The single bus transaction is the store.
 
-This is the pattern. **A real CPU spends most of its time pushing
-bytes around inside its own pockets**, then occasionally talks to
+This is the pattern. **A real CPU spends most of its time shuffling
+bytes between its own internal registers**, then occasionally talks to
 memory to either pull more in or push results out. The bus you watched
 in lesson 1 is busy, but a *lot* of work happens between bus
 transactions.
@@ -203,11 +204,12 @@ designed around it.
 
 ## What's next
 
-Now you know what the CPU's pockets are and how it shuffles bytes
-between them. But where did the program *come from*? When Bill powered
-on a moment ago, `PC` was already pointing at `$CE00` — and somehow
-the right bytes were already sitting there, waiting.
+Now you know what the CPU's on-chip registers are and how it shuffles
+bytes between them. But where did the program *come from*? When the CPU
+powered on a moment ago, `PC` was already pointing at `$CE00` — and
+somehow the right bytes were already sitting there, waiting.
 
-Next lesson: meet **Carl**. Emily's twin brother. He holds the
-program, sits at fixed addresses Bill knows by heart, and is the very
-first thing Bill talks to when the system wakes up.
+Next lesson: **ROM**. Built like RAM in many ways, but with a
+fundamentally different relationship to bytes. It holds the program,
+sits at fixed addresses the CPU knows by heart, and is the very first
+chip the CPU talks to when the system wakes up.

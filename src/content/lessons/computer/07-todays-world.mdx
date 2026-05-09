@@ -10,10 +10,10 @@ tags: ['cpu', 'arduino', 'esp32', 'raspberry-pi', 'diy', 'embedded', 'today']
 import Callout from '../../../components/learn/Callout.astro';
 import ProjectGallery from '../../../components/learn/ProjectGallery.astro';
 
-The family from the last six lessons — Bill, Carl, Emily, Kelly,
-Martha, Karen, Kathy — described a *real* computer from 1980. That
-computer was a desktop-sized box that cost a thousand dollars in
-period money and ran at one megahertz.
+The system from the last six lessons — CPU, ROM, RAM, clock, I/O
+controller, video chip, co-processor — described a *real* computer
+from 1980. That computer was a desktop-sized box that cost a thousand
+dollars in period money and ran at one megahertz.
 
 You can buy that exact pattern today on a board the size of a USB
 stick for about ten dollars. Same shape — CPU, ROM, RAM, clock,
@@ -35,8 +35,8 @@ pins, all on one piece of silicon. You don't connect them to a
 keyboard or a screen. You connect them to a sensor, an LED, a
 motor, a relay, a serial port. You write the entire program once,
 flash it onto the chip, and the chip runs that program forever (or
-until you reflash it). The whole 6502 family lives *inside* the
-chip in a microcontroller.
+until you reflash it). The whole 6502 system lives *inside* a
+single chip in a microcontroller.
 
 **Single-board computers** are *small full computers*. Multi-core
 CPU, gigabytes of RAM, gigabytes of storage, HDMI out, USB ports,
@@ -220,9 +220,9 @@ Arduino without forcing a full Linux into the loop.
 
 ## ISRs and the hard stuff
 
-The ISR pattern from lesson 4 — "Martha pulls Bill's sleeve" —
-exists on every one of these platforms, but the *quality* of access
-varies wildly.
+The ISR pattern from lesson 4 — "a peripheral grabs the CPU's
+attention" — exists on every one of these platforms, but the
+*quality* of access varies wildly.
 
 - **Arduino** exposes ISRs (`attachInterrupt`), but the framework
   hides a lot of context-saving behind the scenes, and there are
@@ -430,9 +430,9 @@ If you've never bought a microcontroller before:
    sketch. Get unstuck. Move on.
 
 That's the loop. Project, get stuck, get unstuck, project. Six
-lessons of theory was the appetizer. Now's the part where Bill,
-Kathy, Carl, Emily, Kelly, Martha, and Karen show up on a chip with
-your name on it.
+lessons of theory was the appetizer. Now's the part where the CPU,
+ROM, RAM, clock, I/O controller, video chip, and co-processor all
+show up on a chip with your name on it.
 
 <Callout title="And the 6502 simulator?" variant="why">
 Throughout this series we've referenced the 6502 simulator as the
@@ -443,7 +443,7 @@ fastest way to internalize what a chip is *actually doing*
 underneath the abstractions. Same vocabulary you've already
 learned. Real silicon-accurate execution. No drivers, no OS, no
 WiFi stack — just bytes, registers, and the bus, exactly the way
-Bill and the family do it.
+the chips in this series do it.
 
 That's where the next series will pick up.
 </Callout>

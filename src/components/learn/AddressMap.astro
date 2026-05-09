@@ -2,7 +2,7 @@
 interface Region {
   top: string;          // top address label, e.g. "$FFFF"
   bottom: string;       // bottom address label, e.g. "$C000"
-  name: string;         // region name (Carl / Emily / etc.)
+  name: string;         // region name (ROM / RAM / I/O)
   kind: 'rom' | 'ram' | 'io';
   desc: string;         // one-line role
   weight?: number;      // visual height weight; defaults to 1
@@ -19,25 +19,25 @@ const regions: Region[] = [
   {
     top: '$FFFF',
     bottom: '$C000',
-    name: 'Carl',
+    name: 'ROM',
     kind: 'rom',
-    desc: 'ROM — program code, RESET vector at $FFFC',
+    desc: 'Read-only memory — program code, RESET vector at $FFFC',
     weight: 1.4,
   },
   {
     top: '$BFFF',
     bottom: '$8000',
-    name: 'Martha',
+    name: 'I/O',
     kind: 'io',
-    desc: 'I/O — peripherals (we meet Martha next lesson)',
+    desc: 'Peripherals — keyboard, video, timers, sound (covered next lesson)',
     weight: 1,
   },
   {
     top: '$7FFF',
     bottom: '$0000',
-    name: 'Emily',
+    name: 'RAM',
     kind: 'ram',
-    desc: 'RAM — variables, scratch, stack',
+    desc: 'Read/write memory — variables, scratch, stack',
     weight: 1.6,
   },
 ];

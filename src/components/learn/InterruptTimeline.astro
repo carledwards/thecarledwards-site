@@ -1,14 +1,14 @@
 ---
 // A static, animated SVG-ish timeline showing how an interrupt
-// pulls Bill out of the main program, runs the ISR, and returns.
+// pulls the CPU out of the main program, runs the ISR, and returns.
 ---
 
 <figure class="irq-timeline not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-5 shadow-inner">
   <figcaption class="irq-caption">
     <span class="irq-cap-label">Timeline</span>
-    Bill is running the main program. Martha pulls IRQ. Bill saves
-    state, jumps to the ISR, runs it, then returns and picks up
-    exactly where he left off.
+    The CPU is running the main program. A peripheral pulls IRQ. The
+    CPU saves state, jumps to the ISR, runs it, then returns and
+    picks up exactly where it left off.
   </figcaption>
 
   <div class="irq-stage">
