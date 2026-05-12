@@ -1,0 +1,361 @@
+---
+title: Same LEDs, new patterns — a scanner and a lookup table
+series: building
+seriesTitle: Building things
+order: 3
+summary: The same eight LEDs, two more shapes. A Knight Rider-style scanner that bounces a single light back and forth, and the engineering tradeoff every programmer eventually meets — compute the answer, or look it up from a table?
+tags: ['leds', 'scanner', 'lookup-table', 'tradeoffs', 'project']
+---
+
+import LedScanner from '../../../components/learn/LedScanner.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+You've got a bar graph working (lesson 1) and you understand the
+wiring underneath (lesson 2). The same 8 LEDs and the same byte-to-
+port pattern can be used to make completely different effects, just
+by changing the pattern formula.
+
+This lesson does two more shapes:
+
+1. A **Knight Rider-style scanner** — one light bouncing left and
+   right.
+2. The same scanner written **a totally different way**, using a
+   *lookup table* instead of computation. Same animation, different
+   engineering tradeoff.
+
+## Now make it bounce — a Knight Rider scanner
+
+A bar graph fills bits from the bottom. A scanner has *exactly one
+bit lit at a time*, walking left and right. If you grew up in the
+1980s and remember the front of KITT's hood from *Knight Rider*,
+you know exactly what this looks like.
+
+All red this time. The trick is different from the bar graph but
+just as small:
+
+- The bar graph filled in bits from the bottom: pattern was
+  `(1 << position) - 1`.
+- The scanner has **exactly one bit lit at a time**, walking left
+  and right: pattern is just `1 << position`. Same shift operator,
+  no subtract.
+
+The whole program in plain English:
+
+```
+position = 0          ; start at the bottom
+direction = +1        ; we're heading up
+forever:
+  pattern = 1 << position    ; just the one bit
+  write pattern to the LED port
+  wait briefly
+  position = position + direction
+  if position is at the top (7) or the bottom (0):
+    direction = -direction   ; flip and head the other way
+```
+
+Watch it run:
+
+<LedScanner label="The scanner — single bit bouncing 0 → 7 → 0" speed={120} />
+
+### 6502 assembly
+
+The cleanest way to write this on a 6502 is to keep the *current
+pattern* in a memory byte and rotate it left or right depending on
+direction. The chip has `ASL` (Arithmetic Shift Left) and `LSR`
+(Logical Shift Right) instructions — one slot at a time, exactly
+what we need.
+
+```
+; Memory locations we'll use:
+pattern   = $80         ; current bit pattern (one bit set)
+direction = $81         ; $00 = going up, $01 = going down
+
+  LDA #$01              ; start with bit 0 lit:  %00000001
+  STA pattern
+  LDA #$00              ; direction = up
+  STA direction
+
+loop:
+  LDA pattern
+  STA $D000             ; write current pattern out to the LED port
+  ;
+  ; ... insert delay loop here ...
+  ;
+  LDA direction
+  BNE going_down
+
+going_up:
+  ASL pattern           ; shift pattern LEFT (bit moves up one slot)
+  LDA pattern
+  CMP #$80              ; did the bit just reach bit 7?
+  BNE loop
+  LDA #$01              ; yes — flip direction to "down"
+  STA direction
+  JMP loop
+
+going_down:
+  LSR pattern           ; shift pattern RIGHT (bit moves down one slot)
+  LDA pattern
+  CMP #$01              ; did the bit just reach bit 0?
+  BNE loop
+  LDA #$00              ; yes — flip direction to "up"
+  STA direction
+  JMP loop
+```
+
+It looks longer than the bar graph version, but every line is
+doing exactly what it sounds like: shift the bit one slot, write to
+the LEDs, check if we hit the end, flip direction if we did. Same
+five-step rhythm — read state, modify it, write it out, check a
+condition, jump.
+
+### Arduino C
+
+In C, the bouncing logic is one variable plus an `if`:
+
+```c
+#include <Arduino.h>
+
+const int LED_PINS[] = {2, 3, 4, 5, 6, 7, 8, 9};
+
+void writePattern(uint8_t pattern) {
+  for (int i = 0; i < 8; i++) {
+    digitalWrite(LED_PINS[i], (pattern >> i) & 1 ? HIGH : LOW);
+  }
+}
+
+void setup() {
+  for (int p : LED_PINS) pinMode(p, OUTPUT);
+}
+
+int position = 0;
+int direction = 1;
+
+void loop() {
+  writePattern(1 << position);   // just the one bit
+  delay(80);
+  position += direction;
+  if (position == 7 || position == 0) {
+    direction = -direction;       // bounce off the end
+  }
+}
+```
+
+That's it. Ten lines of logic. The `(1 << position)` is doing the
+work of the assembly's `ASL` or `LSR`, except in C we don't care
+which direction we're shifting — we just compute the right pattern
+for whatever `position` we landed on.
+
+### MicroPython
+
+Almost identical:
+
+```python
+from machine import Pin
+import time
+
+LED_PINS = [Pin(p, Pin.OUT) for p in (16, 17, 18, 19, 21, 22, 23, 25)]
+
+def write_pattern(pattern):
+    for i, pin in enumerate(LED_PINS):
+        pin.value((pattern >> i) & 1)
+
+position = 0
+direction = 1
+
+while True:
+    write_pattern(1 << position)
+    time.sleep_ms(80)
+    position += direction
+    if position == 7 or position == 0:
+        direction = -direction
+```
+
+Same shape. Different keywords, identical logic.
+
+### What changed vs. the bar graph
+
+Compare the *only line that does the math*:
+
+| Project | Pattern formula |
+| --- | --- |
+| Bar graph | `(1 << position) - 1` &nbsp; (fill bits below) |
+| Scanner | `1 << position` &nbsp; (single bit at position) |
+
+The only difference between "a meter that climbs from the bottom"
+and "a single light that bounces back and forth" is the **subtract
+one**. That's the whole story.
+
+Same 8 LEDs. Same one-byte port. Same family of shift instructions.
+Two completely different-looking effects.
+
+## A simpler way — a lookup table
+
+Now the elephant in the room. Everything we just did with shift
+operators, direction flags, and "are we at the end yet?" checks has
+a much simpler alternative: **just list the patterns out ahead of
+time, and walk through them.**
+
+```
+patterns = [
+  %00000001, %00000010, %00000100, %00001000,
+  %00010000, %00100000, %01000000, %10000000,
+  %01000000, %00100000, %00010000, %00001000,
+  %00000100, %00000010
+]
+```
+
+Fourteen entries: eight going up (bit walks from bit 0 to bit 7),
+six coming back (we skip the two endpoints so the bounce doesn't
+visually pause). To run the scanner, you don't compute anything —
+you just step through the array, write each pattern to the LEDs,
+and wrap back to the start when you hit the end:
+
+```
+i = 0
+forever:
+  write patterns[i] to the LED port
+  wait briefly
+  i = (i + 1) mod 14            ; wrap when we run off the end
+```
+
+No shift logic. No direction variable. No bounds checks. Just walk
+an array.
+
+Two small notational asides for the code that follows:
+
+- **`%`** in C and Python (also called **modulo**) means "the
+  remainder after dividing." `15 % 14` is `1`; `14 % 14` is `0`.
+  We use it to wrap `i` back to the start of the array when we
+  hit the end.
+- **`sizeof(patterns)`** in C and **`len(patterns)`** in Python
+  are language-specific ways to ask "how many items are in this
+  array?" — both return the same number for our 14-byte table.
+
+### 6502 assembly — and a place X really shines
+
+```
+patterns:
+  .byte $01, $02, $04, $08, $10, $20, $40, $80
+  .byte $40, $20, $10, $08, $04, $02
+
+scanner:
+  LDX #$00            ; start at index 0
+loop:
+  LDA patterns,X      ; load patterns[X] into A (X is the index)
+  STA $D000           ; write to the LED port
+  ; ... delay ...
+  INX                 ; X = X + 1
+  CPX #14             ; compare X with the table length
+  BNE loop            ; if not yet at end, go again
+  LDX #$00            ; otherwise wrap back to start
+  JMP loop
+```
+
+`LDA patterns,X` is **indexed addressing** — exactly what `X` and
+`Y` were designed for back in the registers lesson of the computer
+series. The CPU adds `X` to the base address `patterns` and fetches
+the byte there. One instruction. No shifts, no `ASL`/`LSR`, no
+direction tracking.
+
+Compare the *whole scanner program* with the shift version:
+
+- Shift version: ~16 instructions of bouncing logic.
+- Lookup version: 7 instructions + a 14-byte table.
+
+Both produce the same animation. The lookup version is shorter,
+faster (per step), and substantially easier to reason about — *at
+the cost of 14 bytes of pre-computed table memory*.
+
+### Arduino C
+
+```c
+const uint8_t patterns[] = {
+  0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+  0x40, 0x20, 0x10, 0x08, 0x04, 0x02,
+};
+const int N = sizeof(patterns);
+
+int i = 0;
+void loop() {
+  writePattern(patterns[i]);
+  delay(80);
+  i = (i + 1) % N;
+}
+```
+
+Four lines of logic. No `if` for the bounce — the bounce is
+*baked into the table itself*, because we wrote it that way.
+
+### MicroPython
+
+```python
+patterns = [
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
+    0x40, 0x20, 0x10, 0x08, 0x04, 0x02,
+]
+
+i = 0
+while True:
+    write_pattern(patterns[i])
+    time.sleep_ms(80)
+    i = (i + 1) % len(patterns)
+```
+
+Same shape again. Three significant lines.
+
+### The tradeoff: computation vs. memory
+
+This is one of the oldest engineering decisions in computing.
+
+- The **shift / compute** version is **small in memory** — a few
+  bytes of program code, no table. But it runs more instructions
+  per step, and you have to reason carefully about the bouncing
+  logic.
+- The **lookup table** version is **larger in memory** — you pay
+  the cost of the table once, up front. But each step is trivial:
+  one load, one store, increment, wrap.
+
+On a 6502 with 64 KB of total address space (and often far less
+RAM), 14 bytes of table is meaningful but manageable. On a modern
+microcontroller with hundreds of KB of flash, the table is
+basically free. On a desktop with gigabytes, the table is *less
+than nothing.*
+
+This pattern — **lookup beats compute when memory is cheaper than
+cycles** — shows up everywhere once you start looking for it:
+
+- **Sine and cosine tables** for audio synthesis and old-school 3D
+  graphics. Computing `sin(x)` was hopelessly slow on a 286; a
+  256-entry table got you `sin` in one load.
+- **Gamma correction** for displays — a 256-byte table maps an
+  input brightness to the right output, no math required.
+- **Font glyphs** in ROM — every character is a pre-computed
+  pattern of pixel bytes, looked up by character code.
+- **CRC and checksum tables** for fast error detection.
+- **Color palettes** in retro graphics — a 4-bit pixel value is
+  used to index into a 16-entry table of "what color is this,
+  actually?"
+
+The 6502 was *especially* good at this style of code because of
+its indexed addressing modes. `LDA table,X` was three bytes of
+code that did the work of a whole branching expression. Hardware
+designers knew programmers would lean on this pattern. You should
+too.
+
+When you see a programmer reach for an array of pre-computed bytes
+where they could "just calculate it" — they're not being lazy.
+They're spending memory to save cycles, and a lot of the time
+that's exactly the right call.
+
+## What's next
+
+You've now seen one set of LEDs do three completely different
+things — bar graph, scanner, lookup-driven scanner — using the
+same wires, the same byte-to-port pattern, and three slightly
+different formulas for *what byte to send next*.
+
+The next building project will move from "the chip drives the
+LEDs" to "the chip *also reads from the world*" — a button press,
+a knob, the kind of input that turns the chip into something that
+*responds* instead of just *plays back*.

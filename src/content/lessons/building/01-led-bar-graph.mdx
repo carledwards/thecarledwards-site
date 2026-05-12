@@ -1,0 +1,406 @@
+---
+title: An 8-bar LED meter — same idea, three languages
+series: building
+seriesTitle: Building things
+order: 1
+summary: Take everything from the binary series and the computer series, point it at eight LEDs, and you have a working VU meter. Same logic in 6502 assembly, Arduino C, and MicroPython on an ESP32 — three languages, one byte, one little bit-trick that stays unchanged through all of them.
+tags: ['6502', 'arduino', 'esp32', 'micropython', 'leds', 'project']
+---
+
+import LedBarMeter from '../../../components/learn/LedBarMeter.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+You've spent two series — binary, then computer — building toward a
+specific kind of moment. Hardware that *moves*. A byte you write that
+actually shows up as light. This lesson is that moment.
+
+We're going to build an **8-LED bar graph** — the kind of strip that
+sits on top of an audio mixer and goes up and down with the volume.
+We'll do the same thing in three different languages on three
+different platforms, and watch how exactly one piece of logic stays
+unchanged through all of them.
+
+<Callout title="First-time programmer? Start here." variant="note">
+This lesson shows real code in three programming languages. If
+you've never written code before, that probably sounds like a wall.
+It isn't — code is just a list of instructions written in a way the
+chip (or a translator program for the chip) can follow.
+
+You **don't** need to memorize syntax. You're here to *recognize the
+shape*. There's exactly one little trick at the heart of this entire
+project, and it shows up identically in every language. Find that
+trick, and you've got it. Everything else is wrapping.
+
+We'll walk through every line in plain English as we go. If a
+symbol looks unfamiliar, there's almost certainly a quick aside
+nearby explaining what it does.
+</Callout>
+
+<Callout title="Quick orientation — bits, bytes, ports, hex" variant="aside">
+A few words you'll see throughout. We covered all of these in
+depth in the *Binary, by hand* series; here's the working version
+in case you're starting cold.
+
+- A **bit** is a single `0` or `1`.
+- A **byte** is 8 bits in a row — for example, `00001011`. There
+  are 256 possible bytes (`0` through `255` in everyday counting).
+- A **port** is the chip's name for "8 pins together." When you
+  *write* a byte to a port, bit 0 of the byte goes to pin 0,
+  bit 1 to pin 1, and so on — all 8 pins set in one move. The
+  byte and the row of 8 LEDs are basically the same thing.
+- **Hex** is a shorter way to write a byte. `$0F` (assembly
+  notation), `0x0F` (C/Python notation), `15` (decimal), and
+  `00001111` (binary) are all the *same number*. Hex is what
+  programmers reach for when they don't want to write out
+  long binary strings.
+
+That's the working vocabulary. Anything beyond it gets explained
+as it shows up.
+</Callout>
+
+## What we're building
+
+An 8-LED bar graph. A simulated reading (call it a volume, a
+brightness, a percentage — any value from `0` to `100`) gets
+converted into a bar position from 0 to 8, and the corresponding
+number of LEDs light up from the bottom.
+
+We're sticking with `0–100` because that's the range humans actually
+think in: a volume slider, a brightness level, a fuel gauge, an
+"are we there yet" progress bar.
+
+The mapping (each position covers a roughly equal slice of the 0–100
+range):
+
+| Reading (0–100) | Bar position | LED pattern (binary) |
+| :---: | :---: | :---: |
+|  0– 6 | 0 | `00000000` |
+|  7–18 | 1 | `00000001` |
+| 19–31 | 2 | `00000011` |
+| 32–43 | 3 | `00000111` |
+| 44–56 | 4 | `00001111` |
+| 57–68 | 5 | `00011111` |
+| 69–81 | 6 | `00111111` |
+| 82–93 | 7 | `01111111` |
+| 94–100 | 8 | `11111111` |
+
+Each step up in position means "fill one more bit, from the bottom."
+The bar pattern is `(1 << position) - 1`: shift a `1` left by N
+places, subtract `1`, and you've got N ones in the low bits.
+
+And here's a hardware detail that's pure VU-meter convention: the
+bottom three LEDs glow **green** (safe), the middle three glow
+**yellow** (warning), the top two glow **red** (you're maxed out).
+Same byte being written — the color is just whatever LED you
+soldered into each slot.
+
+Here's the working version — pulses automatically through every
+value, or type a number to see exactly what byte gets written to the
+LED port:
+
+<LedBarMeter label="Live demo — the byte that drives the LEDs" />
+
+Notice the readout: the same byte is shown three ways (binary, hex,
+decimal) — exactly the rolled-up view from lesson 1 of the binary
+series. The bar pattern *is* a byte. We're writing real bytes that
+real chips would clock onto real LED pins.
+
+## The algorithm, in plain words
+
+Before we look at any specific language, here's the entire program
+in plain English. No syntax. Just the steps:
+
+```
+forever:
+  read input                ; some byte from 0..100 (volume, sensor, etc.)
+  position = round(input * 8 / 100)        ; squeeze 0..100 down to 0..8
+  if position == 0:
+    pattern = 0                            ; no LEDs
+  else:
+    pattern = (1 << position) - 1          ; fill the bottom `position` bits
+  write pattern to the LED port            ; clock the byte out to the pins
+  wait a brief moment                      ; don't update faster than the eye
+```
+
+Five steps. The whole program. Whichever language we pick next, the
+shape is going to match that outline — different syntax, same five
+moves.
+
+<Callout title="What does `1 << position` mean?" variant="aside">
+The `<<` symbol is **shift left**. It says: "slide all the bits in
+this number to the left by N positions." We met this in lesson 5
+of the binary series; here it is in code form.
+
+- `1` in binary is `00000001` — one bit at the bottom.
+- `1 << 1` slides those bits left by 1 → `00000010` — that's 2.
+- `1 << 2` → `00000100` — that's 4.
+- `1 << 3` → `00001000` — that's 8.
+- … and so on, doubling each time.
+
+So `1 << position` produces a byte with a single `1` bit at
+position N. Subtract 1, and you fill in *all* the bits below it:
+`00001000 - 1` = `00000111`. That's how the bar grows.
+
+If you only remember one thing from this lesson, remember that
+`(1 << n) - 1` makes a bar of N lit bits. Everything else is
+wrapping.
+</Callout>
+
+## The language ladder
+
+Before we look at three implementations of those five steps, a
+quick tour of the languages we'll use — and why there are so many
+of them in the first place. From bottom to top:
+
+1. **Machine code** — the actual bytes the CPU executes. `$A9 $05 $85
+   $20` is "LDA #$05; STA $20" in 6502 machine code. No labels, no
+   mnemonics; just the literal byte sequence the program counter
+   walks. People hand-wrote machine code well into the 1980s using
+   ROM monitors like **HesMon**, typing bytes directly into RAM and
+   running them. Painful but transparent — *the chip sees exactly
+   what you typed*.
+2. **Assembly** — a thin notation layer on top. The bytes get replaced
+   with mnemonics (`LDA`, `STA`, `BNE`) and you can name addresses
+   with labels (`loop:`, `key_buffer`). An **assembler** translates
+   your text into machine code, byte for byte. The relationship is
+   essentially one-to-one: every assembly line produces a known,
+   small number of bytes. There is no "magic" between assembly and
+   machine code — only notation.
+3. **C** — a *compiled* language. You write code that's actually
+   readable to humans (`if`, `for`, names you choose), and a
+   **compiler** (a translator program — `gcc`, `clang`, others)
+   reads your code once and produces a finished pile of machine
+   bytes that the chip can run directly. One line of C might
+   become one machine instruction, or thirty, depending on what it
+   does. This is where the abstraction starts: you no longer know
+   exactly which bytes will run.
+4. **Python / MicroPython** — *interpreted*. Instead of a one-time
+   translation, an **interpreter** (also a translator program)
+   reads your Python source *while it's running* and does the right
+   thing at each step. Slower than C, but much friendlier to write
+   and to change without recompiling. The interpreter itself is a C
+   program that's already been compiled to machine code, so
+   ultimately your Python still ends up driving real machine bytes
+   — just at one extra layer's remove. **MicroPython** is a
+   stripped-down Python interpreter small enough to fit on a
+   microcontroller; **CircuitPython** is a fork of that.
+
+Every rung above machine code is an *abstraction*. **Everything that
+runs on a CPU is ultimately machine code** — the higher languages just
+give you a friendlier path to producing it.
+
+<Callout title="Assembler or assembly?" variant="aside">
+A common slip-up: "I wrote some assembler" usually means "I wrote
+some **assembly** that I'll feed to **the assembler**." The
+*language* is assembly. The *tool that translates it* is the
+assembler. They're related but not the same. Worth using the words
+precisely once you know.
+</Callout>
+
+## The same bit-trick in every language
+
+Here's where the binary lessons cash in. The conversion from
+"position" to "bar pattern" is a single line in C and Python, and a
+short loop in assembly. **Same logic, three syntaxes.**
+
+### 6502 assembly
+
+The densest of the three. Don't worry about decoding every line on
+first read — the goal is to recognize the shape.
+
+A few orientation notes for the unfamiliar:
+
+- Each line of the code below is **one instruction** the chip
+  understands directly.
+- Each instruction starts with a 3-letter abbreviation called a
+  **mnemonic** — `LDA` = "**L**oa**D** **A**", `STA` =
+  "**ST**ore **A**", `ROL` = "**RO**tate **L**eft," `DEX` =
+  "**DE**crement **X**," `BNE` = "**B**ranch if **N**ot **E**qual."
+  The 6502's full vocabulary is about 56 of these. Here we use 7.
+- **`$D000`** is a made-up memory address we've decided is wired
+  to our 8 LEDs. On a real board, the number depends on how the
+  designer routed the chips. The CPU itself doesn't know it's
+  special — `STA $D000` looks the same to it as any other store.
+- Lines starting with `;` are **comments** — notes for humans, not
+  instructions for the chip.
+
+The 6502 doesn't have a "shift left by N" instruction. (Modern chips
+have something called a *barrel shifter* that does shift-by-any-N in
+one step; the 6502 doesn't.) So instead of writing `1 << N`, we have
+to do it one shift at a time, in a loop. Each shift uses the chip's
+**carry bit** as the `1` we're sliding in from the right.
+
+```
+; in:  X = position (0..8)
+; out: A = bar pattern (0..255)
+
+  LDA #$00          ; load 0 into A — start with no LEDs lit
+  CPX #$00          ; check whether X is 0 (position is 0)
+  BEQ done          ; if so, skip the loop — pattern stays at 0
+fill:               ; ← we'll jump back to this label each time around
+  SEC               ; SEt the Carry bit to 1 — that's the bit we'll feed in
+  ROL A             ; ROtate A Left through carry: A shifts left by 1,
+                    ;   and the carry bit slides into the bottom (bit 0)
+  DEX               ; DEcrement X — one less iteration to do
+  BNE fill          ; if X is not zero yet, jump back to "fill"
+done:               ; ← we land here when the loop is finished
+  STA $D000         ; STore A out to address $D000 (the LED port)
+```
+
+Read it as a recipe: "start with zero in A, then N times in a row,
+slide a 1 into the bottom of A. Then write A out to the chip wired
+to the LEDs." Eight steps the first time around, fewer for smaller
+positions. That's the assembly version of `(1 << position) - 1` —
+the chip just doesn't know how to say it in one breath.
+
+### Arduino C
+
+A few Arduino conventions before you read this code:
+
+- Every Arduino sketch has two functions: **`setup()`** runs once
+  when the chip powers on, **`loop()`** runs over and over forever
+  after that.
+- **`pinMode(p, OUTPUT)`** tells the chip "this pin is going to
+  send signals out, not read them in."
+- **`digitalWrite(pin, HIGH)`** sets a pin to logic 1; `LOW` sets
+  it to logic 0.
+- **`uint8_t`** means "unsigned 8-bit integer" — exactly one
+  byte, range `0`–`255`. Same as the bytes we've been clicking on
+  the whole time.
+
+Same logic, one line for the math, two for the I/O:
+
+```c
+#include <Arduino.h>
+
+const int LED_PINS[] = {2, 3, 4, 5, 6, 7, 8, 9};
+
+void writeBar(uint8_t position) {
+  uint8_t pattern = (position == 0) ? 0 : (1 << position) - 1;
+  for (int i = 0; i < 8; i++) {
+    digitalWrite(LED_PINS[i], (pattern >> i) & 1 ? HIGH : LOW);
+  }
+}
+
+uint8_t positionFromInput(uint8_t value) {
+  // value is 0..100; return 0..8
+  return min((value * 8 + 50) / 100, 8);
+}
+
+void setup() {
+  for (int p : LED_PINS) pinMode(p, OUTPUT);
+}
+
+void loop() {
+  uint8_t reading = 50;                    // pretend this came from a sensor
+  writeBar(positionFromInput(reading));
+  delay(50);
+}
+```
+
+`(1 << position) - 1` is the *entire* bit-trick. One expression in C.
+What the 6502 needed a 6-instruction loop for, C handles with a
+single shift and subtract — and the compiler will pick whatever the
+target chip's actual instruction sequence is. On an AVR, the
+compiler typically emits a small shift loop similar in spirit to the
+6502 version, since AVR also lacks a single shift-by-N instruction.
+On chips with a barrel shifter (most ARM Cortex cores, RISC-V), it
+collapses into one instruction. The C source doesn't change; only
+the bytes the compiler emits do.
+
+(Quick aside on `(value * 8 + 50) / 100`: that's regular integer
+math, but with the `+ 50` thrown in to round to the *nearest*
+position instead of always rounding down. Without it, an input
+of `49` would compute `49 * 8 / 100` = `3` (since `392/100` is
+`3.92` and integer math drops the decimals). With the `+ 50`,
+`(49 * 8 + 50) / 100` = `4` — the more visually fair answer
+when the bar's halfway up.)
+
+### MicroPython on ESP32
+
+A few MicroPython conventions before reading:
+
+- **`from machine import Pin`** brings in the chip's Pin class —
+  the thing that lets Python talk to a GPIO pin on the board.
+- **`Pin(16, Pin.OUT)`** creates a pin object for GPIO pin 16,
+  set to output mode (we're going to drive it, not read from it).
+- **`pin.value(0)`** sets the pin to logic 0; **`pin.value(1)`**
+  sets it to 1.
+- **`time.sleep_ms(50)`** pauses for 50 milliseconds.
+
+Same again, in Python:
+
+```python
+from machine import Pin
+import time
+
+LED_PINS = [Pin(p, Pin.OUT) for p in (16, 17, 18, 19, 21, 22, 23, 25)]
+
+def write_bar(position):
+    pattern = 0 if position == 0 else (1 << position) - 1
+    for i, pin in enumerate(LED_PINS):
+        pin.value((pattern >> i) & 1)
+
+def position_from_input(value):
+    # value is 0..100; return 0..8
+    return min(round(value * 8 / 100), 8)
+
+while True:
+    reading = 50  # pretend this came from a sensor
+    write_bar(position_from_input(reading))
+    time.sleep_ms(50)
+```
+
+Look at the math line in all three:
+
+```
+Assembly:   SEC; ROL A; DEX; BNE fill   (loop N times)
+C:          (1 << position) - 1
+Python:     (1 << position) - 1
+```
+
+C and Python use the *exact same operator*. The `<<` shift and the
+`- 1` are *binary operations* — exactly the SHL and SUB you learned
+in lesson 5 of the binary series. **The high-level languages didn't
+make the bit-trick disappear; they just hid the loop.** Underneath
+both lines, the compiler/interpreter is generating something like
+the assembly version we wrote first.
+
+## A glance at the bytes
+
+To close the loop on "everything ultimately becomes machine code,"
+look at the 6502 version one more time:
+
+```
+Assembly             Machine code      Bytes
+LDA #$00             A9 00             2
+CPX #$00             E0 00             2
+BEQ done             F0 06             2
+SEC                  38                1
+ROL A                2A                1
+DEX                  CA                1
+BNE fill             D0 FB             2
+STA $D000            8D 00 D0          3
+                                       ──
+                                       14 bytes total
+```
+
+Every byte on the right column is a real number the chip understands
+directly. The left column is a *label* for those bytes — same logical
+content, easier-to-read presentation. The middle is what an
+assembler produces.
+
+The C and Python versions, after compilation/interpretation, end up
+as their own sequences of machine bytes targeted at a different chip
+(AVR for Arduino, Xtensa for ESP32). Different bytes, different
+chips, **same logic**.
+
+## What's next
+
+You've got 8 LEDs being driven from three different languages on
+three different platforms — same one-byte port, same `(1 << n) - 1`
+trick, three valid syntaxes for it.
+
+But the byte you write isn't always the picture you see. The
+hardware between the chip and the LED has a wiring choice that can
+literally invert your code's logic. That's lesson 2.

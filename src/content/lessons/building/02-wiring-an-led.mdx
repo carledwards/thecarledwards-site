@@ -1,0 +1,177 @@
+---
+title: Wiring an LED — active-high vs active-low
+series: building
+seriesTitle: Building things
+order: 2
+summary: You've made eight LEDs light up from code. Now meet the hardware between the chip and the LED — what an LED actually needs to work, and why the wiring choice can flip the meaning of `1` and `0` in the byte you write.
+tags: ['leds', 'electronics', 'wiring', 'hardware', 'project']
+---
+
+import LedWiring from '../../../components/learn/LedWiring.astro';
+import Callout from '../../../components/learn/Callout.astro';
+
+In the previous lesson we wrote code that turns 8 LEDs into a bar
+graph — same logic in 6502 assembly, Arduino C, and MicroPython.
+Throughout, we used a very natural rule:
+
+- Send a `1` to a pin → that LED turns **on**.
+- Send a `0` to a pin → that LED turns **off**.
+- Byte `0` (`%00000000`) → all 8 LEDs off.
+- Byte `$FF` (`%11111111`) → all 8 LEDs on.
+
+That feels obvious. It's also only *one* of two ways to physically
+wire an LED to the chip's pin. The other way **flips the meaning**
+of the byte you write: `0` turns the LED on, `1` turns it off.
+
+This isn't your code's choice. It's the *circuit's* choice. Once
+the LED is soldered onto the board in a certain way, your code has
+to play along.
+
+This is the moment *software meets physics*. It surprises everyone
+the first time.
+
+## A quick word about LEDs themselves
+
+If you've never wired one up, two things are worth knowing about an
+LED:
+
+- **It has polarity.** Unlike a regular light bulb, an LED has a
+  *positive* side (the **anode**) and a *negative* side (the
+  **cathode**). Hook it up backwards and it simply doesn't light.
+  On a real LED, the cathode is usually marked by a small **flat
+  spot** on the rim of the plastic body, or by being the shorter
+  leg. In schematics we'll show that flat spot as a thick vertical
+  line on the cathode side.
+- **It needs a resistor in series with it.** An LED on its own
+  would try to draw way too much current from the chip and burn
+  out (or damage the chip). A small resistor — usually somewhere
+  between 220 and 470 ohms for a 3.3 V or 5 V supply — limits how
+  much current can flow and sets the brightness. Always one
+  resistor per LED.
+
+You'll see schematics with the resistor on *either* side of the
+LED — it works the same either way, because in a series circuit
+all the current that goes through one part goes through the other.
+For teaching purposes we'll put the resistor **between the pin and
+the LED**, because that order reads cleanly left-to-right: *chip →
+safety resistor → light.*
+
+## Two ways to wire one LED
+
+Here are the same four components — `Pin`, `Resistor`, `LED`, and
+the rightmost terminal — drawn left-to-right in *the same order*
+for both wiring styles. Spot the two differences:
+
+<LedWiring mode="active-high" caption="Active-high: right side is GND. LED's flat (cathode) faces right — current flows out that side." />
+
+When the pin sends a `1`, it pushes current out: the chip → through
+the resistor (which keeps the current to a safe level) → through
+the LED (which lights up) → into `GND`. Ground is the "floor" where
+electricity ends up; you can think of it as `0 V`.
+
+Now flip the wiring — leave every component in the same place, but
+connect the rightmost end to the **always-powered `+V`** supply
+instead of ground:
+
+<LedWiring mode="active-low" caption="Active-low: right side is +V. LED's flat (cathode) now faces left — current flows out that side, toward the pin." />
+
+Two things changed:
+
+1. The **right terminal** went from `GND` to `+V`.
+2. The **LED's flat side** flipped to point left (because current
+   now flows the other direction through it — from `+V` back
+   toward the pin).
+
+Everything else — pin position, resistor position, the LED itself —
+is identical. **That's the whole physical difference between the
+two wiring styles.** Two things on the diagram. Opposite meaning of
+`1` and `0` in your code.
+
+### The plain-English version
+
+Forget chips for a second. Picture a battery, a light bulb, and a
+switch. There are two ways to put the switch in:
+
+- **Active-high (the obvious one).** The switch is on the "pushing
+  out" side: between the battery's `+` and the bulb. Close the
+  switch → battery pushes electricity through the bulb to ground →
+  bulb on. Open it → nothing flows → bulb off. In chip terms, the
+  pin is *pushing*: pin sends `1` → LED lights.
+- **Active-low (the flipped one).** The switch is on the "pulling
+  to ground" side: between the bulb and ground. The bulb is
+  *always* connected to `+`, ready to light, but it can't until
+  there's a path back to ground. Close the switch → ground path
+  opens → bulb on. Open the switch → no path → bulb off. In chip
+  terms, the pin is *pulling*: pin sends `0` (= "I'm now a
+  connection to ground") → LED lights.
+
+Same LED, same chip — different wire path. Opposite meaning of
+`1` and `0`.
+
+## Why active-low shows up so often
+
+In a lot of real designs, **active-low is the pattern you'll see
+most often**. A few practical reasons (worth noting that none of
+these are absolute — they depend on the chip family and the board):
+
+- **On many chips, pins can sink current more comfortably than
+  source it.** Historical CMOS and TTL parts were often spec'd to
+  handle a bit more current pulling to ground than pushing out.
+  That's less true on modern microcontrollers where source and sink
+  are usually balanced — but the convention from the earlier eras
+  is what's still in most schematics.
+- **At power-on, pins typically start as inputs.** Until your code
+  tells a pin to be an output, it's "floating" — neither pushing
+  nor pulling. With active-low wiring, the LED's other side is
+  connected to `+V`, but no current can flow until the pin actually
+  pulls to ground. So the LEDs stay reliably *off* during boot.
+  With active-high, the same floating pin can let the LED briefly
+  flicker as voltages settle.
+- **It's the conventional choice.** Once it's the convention,
+  there's a momentum to it: data sheets show LEDs wired active-low
+  in their example circuits, hobby kits ship with active-low LED
+  arrays, and library code assumes the same convention. You can
+  absolutely wire active-high (it's perfectly valid), but you'll
+  find more example code and parts that assume the active-low
+  pattern.
+
+## What this means for your code
+
+The bar-graph logic from lesson 1 doesn't change. You still compute
+`(1 << position) - 1` exactly the same way. The only difference is
+**one extra step right before writing to the LED port: flip every
+bit.**
+
+```
+Assembly:   EOR #$FF            ; XOR the byte with all-ones
+C:          pattern ^ 0xFF      ; same idea
+Python:     pattern ^ 0xFF      ; same idea
+```
+
+A bar at position 4 means "the bottom four LEDs lit." Above the
+output stage that's still `00001111`. But the byte you actually
+clock onto the pins becomes `11110000` — the *complement* — because
+the wiring inverts everything one more time on its way to the LED.
+Same picture, opposite byte.
+
+Wherever you set bit *n* with active-high, you'd *clear* bit *n*
+with active-low. The logic of "fill from the bottom" stays
+identical; only the bits you actually clock onto the pins are
+inverted at the very last step.
+
+This is the kind of detail you don't get from a binary lesson
+alone. You learn it once, the hard way, the first time your LEDs
+come on inverted and you spend an hour staring at perfectly correct
+code.
+
+## What's next
+
+You've got the bar graph working *and* you understand the hardware
+sitting between your byte and the light. Same 8 LEDs are about to
+do something completely different — *one* light bouncing back and
+forth across the row, no bar at all. It's the same byte, the same
+port, the same code shape; only the pattern formula changes.
+
+That's lesson 3 — and we'll see two ways to write it, including a
+classic engineering tradeoff every programmer eventually meets:
+**compute the answer, or look it up?**
