@@ -63,12 +63,22 @@
   aria-modal="true"
   aria-label="FoxPro Mode"
 >
-  <canvas
-    id="foxpro-screen"
-    tabindex="0"
-    class="block max-h-[calc(100vh-3rem)] max-w-[calc(100vw-3rem)] rounded-md outline-none ring-1 ring-ink-700/60"
-    style="image-rendering: pixelated; background:#0000aa; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8), 0 10px 30px -8px rgba(0,0,0,0.6);"
-  ></canvas>
+  <div class="relative">
+    <button
+      id="foxpro-close"
+      type="button"
+      aria-label="Close FoxPro Mode"
+      class="absolute -top-3.5 -right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-ink-700 bg-ink-900/90 text-ink-200 hover:border-accent hover:text-accent hover:bg-ink-800 font-mono text-xs shadow-lg transition-colors"
+    >
+      ✕
+    </button>
+    <canvas
+      id="foxpro-screen"
+      tabindex="0"
+      class="block max-h-[calc(100vh-3rem)] max-w-[calc(100vw-3rem)] rounded-md outline-none ring-1 ring-ink-700/60"
+      style="image-rendering: pixelated; background:#0000aa; box-shadow: 0 30px 80px -20px rgba(0,0,0,0.8), 0 10px 30px -8px rgba(0,0,0,0.6);"
+    ></canvas>
+  </div>
 </div>
 
 <!-- DOS reboot overlay. Stacks above #foxpro-overlay (z-60 vs z-50)
@@ -242,21 +252,49 @@
 
     toggle.addEventListener('click', open);
 
+    // Visible X close button in the overlay corner.
+    const closeBtn = document.getElementById('foxpro-close');
+    closeBtn?.addEventListener('click', close);
+
     // Click on the dim backdrop (but not the canvas itself) closes.
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close();
     });
 
-    // Esc dismisses the overlay unconditionally when it's open. The
-    // canvas's own keydown handler still forwards Esc into foxpro
-    // first (since canvas listeners run before document listeners),
-    // so any open foxpro menu closes its popup state before the
-    // overlay disappears — re-opening the overlay later won't show
-    // a stale menu.
+    // Esc behaves as a one-layer-at-a-time dismiss:
+    //   1st Esc — the canvas's own keydown handler forwards it into
+    //             foxpro. If a menu (or popup) is open inside foxpro,
+    //             that closes first. We do NOT close the overlay yet.
+    //   2nd Esc — within a short grace window, close the overlay.
+    //
+    // We can't query foxpro-go for "is a menu open" from outside the
+    // wasm, so we use this two-step dismiss instead. Effect: Esc to
+    // back out of menus naturally; Esc-Esc to leave the overlay.
+    // The Esc-arming flag persists until either the second Esc fires
+    // OR the user interacts with the overlay in any other way (clicks,
+    // types a non-Esc key). The grace window is just a safety reset
+    // so the flag doesn't linger forever in the background.
+    const ESC_GRACE_MS = 2500;
+    let lastEscAt = 0;
     document.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape') return;
       if (overlay.classList.contains('hidden')) return;
-      close();
+      if (e.key !== 'Escape') {
+        // Any other key resets the "armed" state — the user is doing
+        // something else inside foxpro, not trying to exit.
+        lastEscAt = 0;
+        return;
+      }
+      const now = Date.now();
+      if (lastEscAt && now - lastEscAt < ESC_GRACE_MS) {
+        close();
+        lastEscAt = 0;
+        return;
+      }
+      // First Esc — let the canvas (and foxpro) handle it. Mark the
+      // press so a follow-up Esc within ~2.5s closes the overlay.
+      lastEscAt = now;
     });
+    // Mouse clicks inside the overlay also reset the arming.
+    overlay.addEventListener('mousedown', () => { lastEscAt = 0; });
   })();
 </script>

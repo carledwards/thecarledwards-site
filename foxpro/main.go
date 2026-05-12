@@ -66,10 +66,10 @@ func main() {
 	cp.Print(`  Welcome to Carl Edwards' site,`)
 	cp.Print(`  in FoxPro Mode.`)
 	cp.Print("")
-	cp.Print(`  Type 'help' for commands.`)
-	cp.Print(`  Or use the menus above.`)
+	cp.Print(`  Written in Go, compiled to wasm.`)
 	cp.Print("")
-	cp.Print(`  Press Esc to dismiss.`)
+	cp.Print(`  Type 'help' for commands`)
+	cp.Print(`  or 'quit' to exit.`)
 	cp.Print("")
 	cp.Print("")
 	cp.AppendInputLine() // park cursor on a fresh blank line below
@@ -165,6 +165,10 @@ func siteCommands(a *foxpro.App) []command {
 			cp.Print("Heading to the blog…")
 			navigate("/blog/")
 		}},
+		{"LEARN", "Open the interactive lessons", func(cp *foxpro.CommandProvider, args string) {
+			cp.Print("Opening the lessons…")
+			navigate("/learn/")
+		}},
 		{"WAIT", "Show a sample notification", func(cp *foxpro.CommandProvider, args string) {
 			msg := strings.TrimSpace(args)
 			if msg == "" {
@@ -173,6 +177,9 @@ func siteCommands(a *foxpro.App) []command {
 			a.ShowWaitWindow(&foxpro.WaitWindow{Message: msg})
 		}},
 		{"EXIT", "Close FoxPro Mode", func(cp *foxpro.CommandProvider, args string) {
+			closeOverlay()
+		}},
+		{"QUIT", "Close FoxPro Mode", func(cp *foxpro.CommandProvider, args string) {
 			closeOverlay()
 		}},
 	}
@@ -206,7 +213,7 @@ func setupMenus(a *foxpro.App, showCmdWindow func()) {
 		{
 			Label: "&File",
 			Items: []foxpro.MenuItem{
-				{Label: "Cl&ose (Esc)", OnSelect: closeOverlay},
+				{Label: "Cl&ose", OnSelect: closeOverlay},
 			},
 		},
 		{
@@ -227,6 +234,7 @@ func setupMenus(a *foxpro.App, showCmdWindow func()) {
 				{Label: "&Home", OnSelect: func() { navigate("/") }},
 				{Label: "&Projects", OnSelect: func() { navigate("/projects/") }},
 				{Label: "&Blog", OnSelect: func() { navigate("/blog/") }},
+				{Label: "&Learn", OnSelect: func() { navigate("/learn/") }},
 			},
 		},
 		// Window menu — final slot, FoxPro DOS convention. Holds
