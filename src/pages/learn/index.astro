@@ -8,6 +8,11 @@ const all = (await getCollection('lessons', ({ data }) => !data.draft)).sort(
 
 type Lesson = (typeof all)[number];
 
+// Explicit series order on the /learn index. Series listed here
+// appear in this order; any others fall in after, in the order
+// their first lesson is encountered.
+const SERIES_ORDER = ['binary', 'computer', 'building'];
+
 const seriesMap = new Map<string, { title: string; lessons: Lesson[] }>();
 for (const l of all) {
   const key = l.data.series;
@@ -15,7 +20,15 @@ for (const l of all) {
   entry.lessons.push(l);
   seriesMap.set(key, entry);
 }
-const seriesList = Array.from(seriesMap.entries());
+
+const seriesList = Array.from(seriesMap.entries()).sort(([a], [b]) => {
+  const ai = SERIES_ORDER.indexOf(a);
+  const bi = SERIES_ORDER.indexOf(b);
+  if (ai === -1 && bi === -1) return a.localeCompare(b);
+  if (ai === -1) return 1;
+  if (bi === -1) return -1;
+  return ai - bi;
+});
 ---
 
 <BaseLayout
