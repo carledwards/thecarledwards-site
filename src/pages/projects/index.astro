@@ -100,6 +100,22 @@ const projects: Project[] = [
     ],
   },
   {
+    slug: 'lets-go-merlin',
+    title: 'Merlin Emulator',
+    tagline:
+      'A faithful emulator of Merlin — The Electronic Wizard (Parker Brothers, 1978) — running the original TI MP3404 ROM on a from-scratch TMS1100 interpreter written in Go.',
+    blurb:
+      "Nothing here re-creates Merlin's six games. The 1978 program is executed one instruction at a time, and the light-show, the tones, and all six games emerge from running the real chip's code. The same pure-Go core runs three ways — a browser build (Go → WebAssembly, audio via an AudioWorklet), a CLI for tracing and debugging, and a dependency-free package anywhere Go runs. The interpreter is verified bit-for-bit against a C++ reference across 200,000 instructions.",
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'WebAssembly', 'TMS1100', 'Emulator', 'Retro-tech'],
+    hero: '/images/projects/lets-go-merlin/hero.png',
+    links: [
+      { label: 'Play it', href: 'https://carledwards.github.io/lets-go-merlin/' },
+      { label: 'Source', href: 'https://github.com/carledwards/lets-go-merlin' },
+    ],
+  },
+  {
     slug: 'apple-intelligence-foundation-server',
     title: 'Apple Intelligence Foundation Server',
     tagline: 'Local HTTP server that exposes Apple Intelligence on-device foundation models behind a simple API.',
