@@ -100,6 +100,22 @@ const projects: Project[] = [
     ],
   },
   {
+    slug: 'go6asm',
+    title: 'go6asm',
+    tagline:
+      'A ca65-compatible 6502 cross-assembler, linker and static analyzer — runs in your browser, no install.',
+    blurb:
+      "A from-scratch assembler for the NMOS 6502, deliberately a strict subset of cc65's ca65 syntax — and byte-identical to ca65/ld65 for that subset, checked by a differential fuzzer that diffs thousands of generated programs against the real toolchain on every run. It assembles, links to a target's memory map, and statically traces every path the CPU can take to flag mistakes (writing ROM, touching unmapped memory, a stray BRK) before the code ever runs. A progressive-disclosure mode lets a beginner write only instructions while it supplies the boilerplate, then shows exactly what it filled in. The same Go core runs as a CLI and as a WebAssembly playground — it's the assembler the 6502 Simulator's demos are written in.",
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'WebAssembly', '6502', 'Assembler', 'Retro-tech'],
+    links: [
+      { label: 'Open the playground', href: 'https://carledwards.github.io/go6asm/' },
+      { label: 'Language reference', href: 'https://carledwards.github.io/go6asm/reference.html' },
+      { label: 'Source', href: 'https://github.com/carledwards/go6asm' },
+    ],
+  },
+  {
     slug: 'lets-go-merlin',
     title: 'Merlin Emulator',
     tagline:
