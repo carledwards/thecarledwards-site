@@ -14,7 +14,7 @@ const isActive = (href: string) =>
 <header class="border-b border-ink-800/80 bg-ink-950/70 backdrop-blur-md sticky top-0 z-40">
   <div class="container-wide flex h-16 items-center justify-between">
     <a href="/" class="group flex items-center gap-3 font-mono text-sm">
-      <span class="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_theme(colors.accent.DEFAULT)]"></span>
+      <span class="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_rgb(var(--accent))]"></span>
       <span class="text-ink-100 group-hover:text-accent">
         Carl<span class="hidden sm:inline"> Edwards</span>
       </span>
@@ -33,6 +33,54 @@ const isActive = (href: string) =>
           {l.label}
         </a>
       ))}
+      <button
+        id="theme-toggle"
+        type="button"
+        aria-label="Toggle light/dark theme"
+        title="Toggle light/dark theme"
+        class="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-400 hover:bg-ink-800/40 hover:text-ink-100"
+      >
+        <svg
+          class="theme-ico-sun h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+          />
+        </svg>
+        <svg
+          class="theme-ico-moon h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      </button>
     </nav>
   </div>
 </header>
+
+<script is:inline>
+  (function () {
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var light = document.documentElement.classList.toggle('light');
+      try {
+        localStorage.setItem('theme', light ? 'light' : 'dark');
+      } catch (e) {}
+    });
+  })();
+</script>

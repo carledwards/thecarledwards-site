@@ -208,10 +208,10 @@ const projects: Project[] = [
 
 const statusColor = (s: Project['status']) =>
   s === 'Active'
-    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 light:bg-emerald-600/15 light:text-emerald-700 light:border-emerald-600/45'
     : s === 'Working'
-    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    : 'bg-ink-800/60 text-ink-400 border-ink-700';
+    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 light:bg-amber-500/20 light:text-amber-700 light:border-amber-600/50'
+    : 'bg-ink-800/60 text-ink-400 border-ink-700 light:text-ink-300';
 ---
 
 <BaseLayout
@@ -289,7 +289,7 @@ const statusColor = (s: Project['status']) =>
           {p.tags.length > 0 && (
             <div class="flex flex-wrap gap-2">
               {p.tags.map((t) => (
-                <span class="font-mono text-[10px] uppercase tracking-wider text-ink-400 bg-ink-800/60 border border-ink-800 px-2 py-0.5 rounded">
+                <span class="font-mono text-[10px] uppercase tracking-wider text-ink-400 light:text-ink-200 bg-ink-800/60 border border-ink-800 px-2 py-0.5 rounded">
                   {t}
                 </span>
               ))}

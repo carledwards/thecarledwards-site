@@ -27,6 +27,23 @@ const fullTitle = title === 'Carl Edwards' ? title : `${title} — Carl Edwards`
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {/* Apply the saved theme before first paint — no flash of the wrong
+        theme. Dark is the default; only an explicit `light` choice (or a
+        light system preference with no saved choice) adds the class. */}
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var light =
+            saved === 'light' ||
+            (!saved &&
+              window.matchMedia('(prefers-color-scheme: light)').matches);
+          if (light) document.documentElement.classList.add('light');
+        } catch (e) {}
+      })();
+    </script>
+
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonical} />

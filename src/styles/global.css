@@ -4,6 +4,66 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────
+   Theme palette. All `ink-*`/`accent` utilities resolve to these
+   channel triplets, so toggling the `.light` class on <html> reskins
+   the entire site (including Tailwind Typography, which points at the
+   same vars). Default = dark; `.light` = Solarized Light.
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --ink-950: 10 12 16;
+  --ink-900: 13 17 23;
+  --ink-800: 22 27 34;
+  --ink-700: 33 38 45;
+  --ink-600: 48 54 61;
+  --ink-500: 72 79 88;
+  --ink-400: 139 148 158;
+  --ink-300: 177 186 196;
+  --ink-200: 201 209 217;
+  --ink-100: 230 237 243;
+  --accent: 126 231 135;
+  --accent-dim: 86 211 100;
+}
+
+:root.light {
+  color-scheme: light;
+  --ink-950: 253 246 227; /* base3  #fdf6e3 — page background          */
+  --ink-900: 240 233 210; /*        #f0e9d2 — header / raised panels    */
+  --ink-800: 208 198 168; /*        #d0c6a8 — borders / chip surface    */
+  --ink-700: 188 177 144; /*        #bcb190 — strong borders / hr       */
+  --ink-600: 168 156 122; /*        #a89c7a — bullets / quote rule      */
+  --ink-500: 122 138 134; /*        #7a8a86 — faint labels              */
+  --ink-400: 95 117 113;  /*        #5f7571 — muted / secondary (~4.5:1) */
+  --ink-300: 88 108 113;  /*        #586c71 — lead (~5:1)               */
+  --ink-200: 73 92 97;    /*        #495c61 — body text (~7:1)          */
+  --ink-100: 7 54 66;     /* base02 #073642 — headings / strong         */
+  --accent: 31 128 56;    /*        #1f8038 — darkened for AA on cream   */
+  --accent-dim: 24 99 44; /*        #18632c                              */
+}
+
+/* Ease the swap rather than hard-cut. Transform/opacity excluded so
+   animations and interactive widgets aren't affected. */
+:root,
+:root.light {
+  --theme-tx: background-color .25s ease, border-color .25s ease,
+              color .25s ease, fill .25s ease;
+}
+body,
+body * {
+  transition: var(--theme-tx);
+}
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body * { transition: none; }
+}
+
+/* Header toggle: show the glyph for the theme you'd switch *to*. */
+.theme-ico-sun,
+.theme-ico-moon { display: none; }
+:root:not(.light) .theme-ico-sun { display: inline; }  /* dark  → offer light (sun) */
+:root.light .theme-ico-moon { display: inline; }       /* light → offer dark (moon) */
+
 @layer base {
   html {
     @apply bg-ink-950 text-ink-200 antialiased;
@@ -12,6 +72,17 @@
 
   body {
     @apply min-h-screen flex flex-col;
+  }
+
+  /* Mobile: never pan sideways. Clip any stray horizontal overflow so
+     the page stays locked to the viewport width. Vertical scroll and
+     pinch-zoom are untouched; `clip` (where supported) avoids the
+     position: sticky breakage that plain `hidden` can introduce. */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   ::selection {
