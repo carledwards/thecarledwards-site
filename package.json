@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "prebuild": "sh foxpro/build-ci.sh",
+    "prebuild": "sh foxpro/build-ci.sh && sh codelab/build-ci.sh",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"

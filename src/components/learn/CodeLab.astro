@@ -1,0 +1,195 @@
+---
+// CodeLab — an in-browser 6502 lab: edit assembly, go6asm assembles it
+// (wasm), go6sim runs it (wasm), and the result is rendered live.
+//
+// Two Go wasm modules on one page (built into /static/codelab/ by
+// codelab/build-ci.sh, pinned to go6sim/go6asm v0.1.0): go6asm.wasm
+// (assemble) + core.wasm (the headless instrument). The first lab is an
+// 8-LED controller — the learner stores to VIA Port B ($B000) and the
+// 8 LEDs light. Same program runs unmodified on the real lcm-32 board.
+//
+// v1: one CodeLab per page (the boot script is global + guarded). That
+// covers lesson pages, which embed a single lab.
+interface Props {
+  seed?: string;
+  title?: string;
+}
+
+const DEFAULT_SEED = `; 8 LEDs on VIA Port B — a binary counter.
+        LDX #$00
+loop:   STX ViaBase        ; ViaBase = $B000 = VIA port B (the 8 LEDs)
+        INX
+        LDY #$00
+delay:  INY
+        BNE delay
+        JMP loop
+`;
+
+const { seed = DEFAULT_SEED, title = '8-LED controller' } = Astro.props;
+const leds = [0, 1, 2, 3, 4, 5, 6, 7];
+---
+
+<div class="codelab-root not-prose my-6 rounded-lg border border-ink-800 bg-ink-950 p-4 font-mono text-sm text-ink-200">
+  <div class="mb-3 text-xs uppercase tracking-[0.15em] text-ink-400">
+    CodeLab — {title}
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-[1fr_300px]">
+    <div>
+      <div class="mb-1 text-[11px] uppercase tracking-[0.1em] text-ink-500">
+        6502 source — stores to VIA Port B ($B000 = 8 LEDs)
+      </div>
+      <textarea
+        class="cl-src h-64 w-full resize-y rounded-md border border-ink-800 bg-ink-950 p-3 text-[13px] leading-relaxed text-ink-200 outline-none focus:border-accent/50"
+        spellcheck="false">{seed}</textarea>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button class="cl-run rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">▶ Assemble &amp; Run</button>
+        <button class="cl-stop rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">■ Stop</button>
+        <button class="cl-step rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">⤳ Step</button>
+        <button class="cl-reset rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">↺ Reset</button>
+        <span class="cl-status self-center text-xs text-ink-500">loading…</span>
+      </div>
+
+      <div class="mt-3 text-[11px] uppercase tracking-[0.1em] text-ink-500">assembler</div>
+      <div class="cl-err mt-1 rounded-md border border-ink-800 bg-ink-950 p-3 text-[12px] text-ink-300">
+        <div class="cl-err-quick">—</div>
+        <details class="cl-err-raw mt-2 hidden">
+          <summary class="cursor-pointer select-none text-[11px] text-ink-500 hover:text-accent">full error detail</summary>
+          <pre class="cl-err-json mt-2 max-h-44 overflow-auto whitespace-pre-wrap text-[11px] text-ink-400"></pre>
+        </details>
+      </div>
+    </div>
+
+    <div>
+      <div class="text-[11px] uppercase tracking-[0.1em] text-ink-500">VIA Port B — 8 LEDs (bit 7 … 0)</div>
+      <div class="cl-leds my-3 flex gap-2">
+        {leds.map(() => <div class="cl-led h-8 w-8 rounded-full border border-ink-700 bg-ink-800"></div>)}
+      </div>
+      <div class="text-[11px] uppercase tracking-[0.1em] text-ink-500">CPU</div>
+      <pre class="cl-regs mt-1 whitespace-pre-wrap rounded-md border border-ink-800 bg-ink-950 p-3 text-[12px] text-ink-300">—</pre>
+      <div class="mt-2 text-[11px] uppercase tracking-[0.1em] text-ink-500">disassembly</div>
+      <pre class="cl-dis mt-1 max-h-52 overflow-auto whitespace-pre rounded-md border border-ink-800 bg-ink-950 p-3 text-[12px] text-ink-300">—</pre>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .cl-led.on { background: rgb(var(--accent)); border-color: rgb(var(--accent)); box-shadow: 0 0 10px rgb(var(--accent) / 0.7); }
+</style>
+
+<script is:inline src="/codelab/wasm_exec.js"></script>
+<script is:inline>
+  (async () => {
+    if (window.__codelabBooted) return;
+    window.__codelabBooted = true;
+
+    const root = document.querySelector('.codelab-root');
+    if (!root) return;
+    const $ = (s) => root.querySelector(s);
+    const status = $('.cl-status');
+
+    async function startGo(file) {
+      const go = new Go();
+      let res;
+      try {
+        res = await WebAssembly.instantiateStreaming(fetch(file), go.importObject);
+      } catch {
+        res = await WebAssembly.instantiate(await (await fetch(file)).arrayBuffer(), go.importObject);
+      }
+      go.run(res.instance); // blocks on select{}; sets its global first
+    }
+
+    try {
+      await startGo('/codelab/go6asm.wasm');
+      await startGo('/codelab/core.wasm');
+    } catch (e) {
+      status.textContent = 'wasm failed to load';
+      return;
+    }
+    for (let i = 0; i < 200 && !(window.go6asm && window.go6sim); i++) {
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    const asm = window.go6asm, sim = window.go6sim;
+    if (!asm || !sim) { status.textContent = 'wasm failed to register'; return; }
+    status.textContent = 'ready — press ▶ Assemble & Run';
+
+    const ledEls = [...root.querySelectorAll('.cl-led')];
+    const hex = (n) => '$' + n.toString(16).toUpperCase().padStart(2, '0');
+    let running = false, raf = 0;
+
+    const renderLEDs = () => {
+      const v = sim.peek(0xB000);
+      ledEls.forEach((el, i) => el.classList.toggle('on', !!(v & (1 << (7 - i)))));
+    };
+    const renderRegs = () => {
+      const s = sim.state();
+      $('.cl-regs').textContent =
+        `A=${hex(s.a)} X=${hex(s.x)} Y=${hex(s.y)} SP=${hex(s.sp)} P=${hex(s.p)}\n` +
+        `PC=$${s.pc.toString(16).toUpperCase().padStart(4, '0')}  cyc=${s.halfCycles}  ${s.running ? 'RUN' : 'STOP'}`;
+    };
+    const frame = () => { if (!running) return; sim.advance(16); renderLEDs(); renderRegs(); raf = requestAnimationFrame(frame); };
+    const stop = () => { running = false; sim.setRunning(false); cancelAnimationFrame(raf); renderRegs(); };
+
+    const srcEl = $('.cl-src'), quick = $('.cl-err-quick'),
+      rawWrap = $('.cl-err-raw'), rawJSON = $('.cl-err-json');
+
+    // Select the offending source line in the editor and scroll to it.
+    function jumpToLine(line) {
+      if (!line || line < 1) return;
+      const lines = srcEl.value.split('\n');
+      let start = 0;
+      for (let i = 0; i < line - 1 && i < lines.length; i++) start += lines[i].length + 1;
+      const end = start + (lines[line - 1] || '').length;
+      srcEl.focus();
+      srcEl.setSelectionRange(start, end); // selecting = the highlight
+    }
+
+    function showOK(msg) {
+      quick.textContent = '✓ ' + msg;
+      quick.className = 'cl-err-quick text-accent';
+      rawWrap.classList.add('hidden');
+    }
+
+    // One concise, clickable row per diagnostic; the editor jumps to the
+    // first error's line. Full raw detail stays in the <details>.
+    function showErrors(errs) {
+      quick.className = 'cl-err-quick space-y-1';
+      quick.textContent = '';
+      errs.forEach((e, i) => {
+        const where = e.line ? `line ${e.line}:${e.col || 1}` : '';
+        const code = e.code ? `error[${e.code}] ` : '';
+        const msg = e.message || (e.rendered || '').split('\n')[0].replace(/^error\[[^\]]*\]:\s*/, '') || 'assembly failed';
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className =
+          'block w-full text-left text-ink-100 hover:text-accent' + (e.line ? ' cursor-pointer' : '');
+        row.innerHTML =
+          `<span class="text-accent-dim">⚠ ${code}</span>` +
+          (where ? `<span class="text-ink-400">${where} — </span>` : '') +
+          `${msg.replace(/</g, '&lt;')}`;
+        if (e.line) row.addEventListener('click', () => jumpToLine(e.line));
+        quick.appendChild(row);
+      });
+      rawJSON.textContent = JSON.stringify(errs, null, 2);
+      rawWrap.classList.remove('hidden');
+      const first = errs.find((e) => e.line);
+      if (first) jumpToLine(first.line);
+    }
+
+    $('.cl-run').addEventListener('click', () => {
+      cancelAnimationFrame(raf); running = false;
+      const r = asm.assemble({ source: srcEl.value, target: 'sim-tui', simple: true });
+      if (!r.success) { showErrors(r.errors || [{ message: 'assembly failed' }]); return; }
+      const lo = sim.load(r.bytes);
+      if (lo && lo.error) { showErrors([{ message: 'load: ' + lo.error }]); return; }
+      showOK(`assembled — ${r.bytes.length} bytes @ $${r.origin.toString(16).toUpperCase()}`);
+      $('.cl-dis').textContent = r.disasm || '—';
+      sim.setSpeedHz(1000); renderLEDs(); renderRegs();
+      running = true; sim.setRunning(true); raf = requestAnimationFrame(frame);
+    });
+    $('.cl-stop').addEventListener('click', stop);
+    $('.cl-step').addEventListener('click', () => { stop(); sim.step(1); renderLEDs(); renderRegs(); });
+    $('.cl-reset').addEventListener('click', () => { stop(); sim.reset(); renderLEDs(); renderRegs(); });
+  })();
+</script>

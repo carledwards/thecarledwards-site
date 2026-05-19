@@ -18,6 +18,12 @@ go.work.sum
 /static/foxpro/wasm_exec.js
 /static/foxpro/foxpro.js
 
+# Built CodeLab wasms (go6sim core + go6asm), from codelab/go.mod's
+# pinned tags. Rebuilt by `make -C codelab build` / prebuild.
+/static/codelab/core.wasm
+/static/codelab/go6asm.wasm
+/static/codelab/wasm_exec.js
+
 # Claude Code
 /.claude/
 

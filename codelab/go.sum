@@ -1,0 +1,4 @@
+github.com/carledwards/go6asm v0.1.0 h1:Yocnc4KgN0q6BUwljBotVx1L7lh42CHv6mSWAUFP/Q0=
+github.com/carledwards/go6asm v0.1.0/go.mod h1:G1kCZnyiYh+PXbkFJpvSz+N8hM1FdPOLC+0MflRfOJk=
+github.com/carledwards/go6sim v0.1.0 h1:pA1cuc8/dHrAF2qMDrOQo7PJ7lhWek5B9Igx5sg7oqM=
+github.com/carledwards/go6sim v0.1.0/go.mod h1:IJJYaq3J1gijVwjypcg2p42Goz5PIHrraLX2VgibWOA=

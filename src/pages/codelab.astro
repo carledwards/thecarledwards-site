@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CodeLab from '../components/learn/CodeLab.astro';
+---
+
+<BaseLayout
+  title="CodeLab"
+  description="An in-browser 6502 lab — write assembly, run it, drive 8 LEDs."
+>
+  <section class="container-prose py-12">
+    <h1 class="mb-3 text-2xl font-semibold text-ink-100">CodeLab</h1>
+    <p class="mb-6 text-ink-300">
+      Edit 6502 assembly, assemble it with <strong>go6asm</strong>, run it on
+      <strong>go6sim</strong> — and watch 8 LEDs on a 6522 VIA. Everything
+      runs in your browser; the same program runs unmodified on the real
+      lcm-32 board.
+    </p>
+    <CodeLab />
+  </section>
+</BaseLayout>
