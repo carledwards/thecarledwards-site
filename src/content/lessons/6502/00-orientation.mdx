@@ -1,0 +1,79 @@
+---
+title: Meet the machine
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 0
+summary: A tiny 6502 computer — a CPU, some RAM, and a 6522 VIA (Versatile Interface Adapter) chip wired to eight LEDs — runs entirely in this page. You write assembly, it assembles and runs in your browser, and the same program runs unmodified on a real board. Start by single-stepping one instruction.
+tags: ['6502', 'assembly', 'go6sim', 'go6asm']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+There is a small but real 6502 computer running on this page. Not a video
+of one, not a picture — an actual MOS 6502 CPU, 8&nbsp;KB of RAM, and a
+6522 VIA chip with eight LEDs on one of its ports. You write 6502
+assembly; **go6asm** assembles it right here in your browser; **go6sim**
+runs it. Nothing to install. And the same program you write here runs,
+unmodified, on a real 6502 board sitting on a desk.
+
+This series teaches that machine by *doing* — every lesson is a thing you
+run and poke at, not a thing you read about.
+
+**Three companions are one click away.** You don't need them to start, but
+when something feels like magic, the answer is almost always in one of
+these — keep them open in a tab as you go:
+
+- [The assembly syntax](/learn/6502/syntax) — every instruction, number, and label you can write.
+- [More about the 6502](/learn/6502/machine) — registers, the status flags, how it boots, what the 6522 VIA is, the memory map.
+- [How CodeLab is built](/learn/6502/built) — the open-source layers, the two CPUs, why it runs at 1&nbsp;kHz.
+
+## CodeLab
+
+Below is the tool you'll use the whole way through. On the left is an
+editor with some 6502 source. On the right: the eight **LEDs**, the
+**CPU** registers, and a live **disassembly** of exactly what the
+assembler produced. The buttons do what they say — **Assemble** (build
+the program), **Run**, **Stop**, **Step** (one instruction), **Reset**.
+Assembling is its own step: nothing else lights up until the program
+builds.
+
+<CodeLab
+  title="Meet the machine — one instruction"
+  seed={`; Load a number, then park.
+        LDA #$2A          ; load 42 ($2A) into A
+done:   JMP done          ; nothing to do — loop here forever
+`}
+/>
+
+## Step one instruction
+
+The real work is one instruction: `LDA #$2A`. Read it as "**l**oa**d** the
+**A** register with the number `$2A`." `$2A` is hex for 42, and the `#`
+means *the number itself* (we'll come back to that `#` — it matters more
+than it looks).
+
+Press **Step** once. Watch the **CPU** panel: `A` changes from `$00` to
+`$2A`. You just executed a 6502 instruction, one cycle-accurate step at a
+time — the same way the real chip does it. Step again and `PC` moves into
+that `JMP done` line.
+
+That second line is worth a beat. A 6502 program never just "ends" — the
+chip always fetches the *next* instruction, forever. When there's nothing
+left to do, you give it a place to spin: `JMP done` jumps to itself. So if
+you **Assemble** and then press **Run** instead of stepping, the CPU runs
+the `LDA`, falls into that park, and CodeLab notices it's stuck and stops with
+"parked at …". That's not an error — it's the honest truth about how a CPU
+works, and you'll *use* that park in real programs soon.
+
+Notice what *didn't* happen: the LEDs stayed dark. This program never
+touched them. Making a byte show up on those LEDs is the satisfying part,
+and it's only three lessons away — but first, registers and stepping,
+because everything else is built on them.
+
+Try this before moving on: change `$2A` to a value of your choosing,
+press **Reset**, then **Step**. `A` follows whatever you wrote. The
+machine isn't magic; it's small enough to hold in your head, and you're
+already driving it.
+
+Next: the registers — what they are, and why that `#` changes everything.

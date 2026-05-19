@@ -29,9 +29,13 @@ const { seed = DEFAULT_SEED, title = '8-LED controller' } = Astro.props;
 const leds = [0, 1, 2, 3, 4, 5, 6, 7];
 ---
 
-<div class="codelab-root not-prose my-6 rounded-lg border border-ink-800 bg-ink-950 p-4 font-mono text-sm text-ink-200">
-  <div class="mb-3 text-xs uppercase tracking-[0.15em] text-ink-400">
-    CodeLab — {title}
+<div class="codelab-root learn-device not-prose my-6 rounded-lg border border-ink-700 bg-ink-800 p-4 shadow-inner font-mono text-sm text-ink-200" data-title={title}>
+  <div class="mb-3 flex items-center gap-3">
+    <span class="mr-auto text-xs uppercase tracking-[0.15em] text-ink-400">CodeLab — {title}</span>
+    <button type="button" class="cl-copy-ai inline-flex items-center gap-1.5 rounded-md border border-ink-700 bg-ink-900 px-2.5 py-1 text-xs text-ink-300 hover:border-accent hover:text-accent" title="Copy the source + the machine context + a link to the syntax reference, ready to paste into an AI assistant">
+      <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor" aria-hidden="true"><path d="M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8z"></path></svg>
+      <span class="cl-copy-ai-label">Copy for AI</span>
+    </button>
   </div>
 
   <div class="grid gap-5 md:grid-cols-[1fr_300px]">
@@ -39,15 +43,31 @@ const leds = [0, 1, 2, 3, 4, 5, 6, 7];
       <div class="mb-1 text-[11px] uppercase tracking-[0.1em] text-ink-500">
         6502 source — stores to VIA Port B ($B000 = 8 LEDs)
       </div>
+      <div class="mb-1 flex items-center gap-3 px-1.5 text-[11px]">
+        <a class="inline-flex items-center gap-1 text-ink-400 hover:text-accent" href="/learn/6502/syntax" target="_blank" rel="noopener" title="Open the assembly syntax reference in a new tab">
+          Syntax <span aria-hidden="true">↗</span>
+        </a>
+        <a class="inline-flex items-center gap-1 text-ink-400 hover:text-accent" href="/learn/6502/machine" target="_blank" rel="noopener" title="More about the 6502 — registers, how it starts, the memory map (new tab)">
+          The 6502 <span aria-hidden="true">↗</span>
+        </a>
+        <a class="inline-flex items-center gap-1 text-ink-400 hover:text-accent" href="/learn/6502/built" target="_blank" rel="noopener" title="How CodeLab is built — the layers and open-source repos (new tab)">
+          Built <span aria-hidden="true">↗</span>
+        </a>
+        <button type="button" class="cl-copy ml-auto inline-flex items-center gap-1 text-ink-400 hover:text-accent" title="Copy the source code">
+          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span class="cl-copy-label">Copy Code</span>
+        </button>
+      </div>
       <textarea
         class="cl-src h-64 w-full resize-y rounded-md border border-ink-800 bg-ink-950 p-3 text-[13px] leading-relaxed text-ink-200 outline-none focus:border-accent/50"
         spellcheck="false">{seed}</textarea>
 
       <div class="mt-3 flex flex-wrap gap-2">
-        <button class="cl-run rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">▶ Assemble &amp; Run</button>
-        <button class="cl-stop rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">■ Stop</button>
-        <button class="cl-step rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">⤳ Step</button>
-        <button class="cl-reset rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent">↺ Reset</button>
+        <button class="cl-asm rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink-700 disabled:hover:text-ink-200" disabled>▶ Assemble</button>
+        <button class="cl-run rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink-700 disabled:hover:text-ink-200" disabled>▶ Run</button>
+        <button class="cl-stop rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink-700 disabled:hover:text-ink-200" disabled>■ Stop</button>
+        <button class="cl-step rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink-700 disabled:hover:text-ink-200" disabled>⤳ Step</button>
+        <button class="cl-reset rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-ink-700 disabled:hover:text-ink-200" disabled>↺ Reset</button>
         <span class="cl-status self-center text-xs text-ink-500">loading…</span>
       </div>
 
@@ -64,7 +84,7 @@ const leds = [0, 1, 2, 3, 4, 5, 6, 7];
     <div>
       <div class="text-[11px] uppercase tracking-[0.1em] text-ink-500">VIA Port B — 8 LEDs (bit 7 … 0)</div>
       <div class="cl-leds my-3 flex gap-2">
-        {leds.map(() => <div class="cl-led h-8 w-8 rounded-full border border-ink-700 bg-ink-800"></div>)}
+        {leds.map(() => <div class="cl-led h-8 w-8 rounded-full border border-ink-700 bg-ink-950"></div>)}
       </div>
       <div class="text-[11px] uppercase tracking-[0.1em] text-ink-500">CPU</div>
       <pre class="cl-regs mt-1 whitespace-pre-wrap rounded-md border border-ink-800 bg-ink-950 p-3 text-[12px] text-ink-300">—</pre>
@@ -112,27 +132,118 @@ const leds = [0, 1, 2, 3, 4, 5, 6, 7];
     }
     const asm = window.go6asm, sim = window.go6sim;
     if (!asm || !sim) { status.textContent = 'wasm failed to register'; return; }
-    status.textContent = 'ready — press ▶ Assemble & Run';
+
+    // Stateful controls. The machine is only meaningful in certain
+    // states, so the buttons reflect it instead of failing silently:
+    //   empty      source not assembled (or edited since) → only Assemble
+    //   assembled  loaded, CPU at reset, idle → Run / Step / Reset
+    //   running    run loop live → only Stop (Assemble re-assembles)
+    //   stopped    halted/parked mid-run → Run (resume) / Step / Reset
+    const btn = {
+      asm: $('.cl-asm'), run: $('.cl-run'), stop: $('.cl-stop'),
+      step: $('.cl-step'), reset: $('.cl-reset'),
+    };
+    const ENABLED = {
+      empty:     { asm: 1 },
+      assembled: { asm: 1, run: 1, step: 1, reset: 1 },
+      running:   { asm: 1, stop: 1 },
+      stopped:   { asm: 1, run: 1, step: 1, reset: 1 },
+    };
+    const STATUS = {
+      empty: 'edit, then ▶ Assemble',
+      assembled: 'assembled — ▶ Run, ⤳ Step, or ↺ Reset',
+      running: 'running…',
+      stopped: 'stopped — ▶ Run resumes, ⤳ Step, or ↺ Reset',
+    };
+    let state = 'empty';
+    const setState = (s, msg) => {
+      state = s;
+      for (const k in btn) btn[k].disabled = !ENABLED[s][k];
+      status.textContent = typeof msg === 'string' ? msg : STATUS[s];
+    };
 
     const ledEls = [...root.querySelectorAll('.cl-led')];
-    const hex = (n) => '$' + n.toString(16).toUpperCase().padStart(2, '0');
-    let running = false, raf = 0;
+    const hex = (n) => '$' + ((n ?? 0) & 0xff).toString(16).toUpperCase().padStart(2, '0');
+    let running = false, raf = 0, hist = [], loaded = false, lastAsm = null;
+    const labTitle = root.dataset.title || 'CodeLab';
+    const HIST = 60; // ~1s at 60fps
 
+    // No program is loaded until Assemble succeeds, so the LEDs/CPU
+    // panels stay neutral and the renderers no-op (haltLoop repaints on
+    // every Assemble/edit, before there is any machine state to show).
     const renderLEDs = () => {
+      if (!loaded) return;
       const v = sim.peek(0xB000);
       ledEls.forEach((el, i) => el.classList.toggle('on', !!(v & (1 << (7 - i)))));
     };
     const renderRegs = () => {
+      if (!loaded) return;
       const s = sim.state();
+      if (!s) return;
       $('.cl-regs').textContent =
         `A=${hex(s.a)} X=${hex(s.x)} Y=${hex(s.y)} SP=${hex(s.sp)} P=${hex(s.p)}\n` +
         `PC=$${s.pc.toString(16).toUpperCase().padStart(4, '0')}  cyc=${s.halfCycles}  ${s.running ? 'RUN' : 'STOP'}`;
     };
-    const frame = () => { if (!running) return; sim.advance(16); renderLEDs(); renderRegs(); raf = requestAnimationFrame(frame); };
-    const stop = () => { running = false; sim.setRunning(false); cancelAnimationFrame(raf); renderRegs(); };
+
+    // haltLoop — tear down the run loop only (no state/status change).
+    // Callers decide the resulting state: Stop/park → 'stopped',
+    // Reset → 'assembled', a fresh Assemble → its own flow.
+    const haltLoop = () => {
+      running = false; sim.setRunning(false); cancelAnimationFrame(raf);
+      hist = []; renderRegs();
+    };
+
+    // Auto-stop a parked / runaway program. If PC stays inside a tiny
+    // window AND nothing observable (LEDs / A / X / Y) changes for ~1s,
+    // it's an idle spin — jmp-to-self, a BRK loop, or the CPU ran off
+    // the end into uninitialized ROM. A productive program (e.g. the
+    // LED counter) sweeps a wider PC range and changes output, so it
+    // keeps running. Without this, "Run" on any non-terminating
+    // program churns forever — a learner will hit this constantly.
+    const checkParked = () => {
+      const s = sim.state();
+      hist.push([s.pc, sim.peek(0xB000), s.a, s.x, s.y]);
+      if (hist.length < HIST) return false;
+      if (hist.length > HIST) hist = hist.slice(-HIST);
+      const f = hist[0];
+      let lo = f[0], hiPC = f[0], moved = false;
+      for (const [pc, o, a, x, y] of hist) {
+        if (pc < lo) lo = pc;
+        if (pc > hiPC) hiPC = pc;
+        if (o !== f[1] || a !== f[2] || x !== f[3] || y !== f[4]) moved = true;
+      }
+      if (hiPC - lo <= 8 && !moved) {
+        haltLoop();
+        setState('stopped',
+          `parked at $${s.pc.toString(16).toUpperCase().padStart(4, '0')} ` +
+            `(no output; this program never ends — Reset, or Step to inspect)`
+        );
+        return true;
+      }
+      return false;
+    };
+
+    const frame = () => {
+      if (!running) return;
+      sim.advance(16); renderLEDs(); renderRegs();
+      if (checkParked()) return;
+      raf = requestAnimationFrame(frame);
+    };
 
     const srcEl = $('.cl-src'), quick = $('.cl-err-quick'),
       rawWrap = $('.cl-err-raw'), rawJSON = $('.cl-err-json');
+
+    // Apply the canonical formatter to the editor. go6asm.format is
+    // total + idempotent + never an error result, so this is safe to
+    // run on load and on every Assemble. The deployed pinned wasm may
+    // predate format() (no such key) — then we leave the source as
+    // authored. Setting .value programmatically does NOT fire 'input',
+    // so this never trips the edit-invalidation listener.
+    const formatEditor = () => {
+      if (typeof asm.format !== 'function') return;
+      const f = asm.format({ source: srcEl.value });
+      if (f && typeof f.source === 'string') srcEl.value = f.source;
+    };
 
     // Select the offending source line in the editor and scroll to it.
     function jumpToLine(line) {
@@ -177,19 +288,171 @@ const leds = [0, 1, 2, 3, 4, 5, 6, 7];
       if (first) jumpToLine(first.line);
     }
 
-    $('.cl-run').addEventListener('click', () => {
-      cancelAnimationFrame(raf); running = false;
+    // Assemble — a discrete step. Auto-applies the canonical formatter
+    // (go6asm.format: total + idempotent, never an error result), then
+    // assembles + loads. It does NOT run: success leaves the machine
+    // 'assembled' (CPU at reset) so the learner drives Run/Step/Reset.
+    btn.asm.addEventListener('click', () => {
+      haltLoop();
+      formatEditor();
       const r = asm.assemble({ source: srcEl.value, target: 'sim-tui', simple: true });
-      if (!r.success) { showErrors(r.errors || [{ message: 'assembly failed' }]); return; }
+      if (!r.success) {
+        loaded = false;
+        lastAsm = { ok: false, errors: r.errors || [{ message: 'assembly failed' }] };
+        showErrors(lastAsm.errors);
+        setState('empty');
+        return;
+      }
       const lo = sim.load(r.bytes);
-      if (lo && lo.error) { showErrors([{ message: 'load: ' + lo.error }]); return; }
+      if (lo && lo.error) {
+        loaded = false;
+        lastAsm = { ok: false, errors: [{ message: 'load: ' + lo.error }] };
+        showErrors(lastAsm.errors);
+        setState('empty');
+        return;
+      }
+      loaded = true;
+      lastAsm = { ok: true, bytes: r.bytes.length, origin: r.origin, disasm: r.disasm || '' };
       showOK(`assembled — ${r.bytes.length} bytes @ $${r.origin.toString(16).toUpperCase()}`);
       $('.cl-dis').textContent = r.disasm || '—';
       sim.setSpeedHz(1000); renderLEDs(); renderRegs();
-      running = true; sim.setRunning(true); raf = requestAnimationFrame(frame);
+      setState('assembled');
     });
-    $('.cl-stop').addEventListener('click', stop);
-    $('.cl-step').addEventListener('click', () => { stop(); sim.step(1); renderLEDs(); renderRegs(); });
-    $('.cl-reset').addEventListener('click', () => { stop(); sim.reset(); renderLEDs(); renderRegs(); });
+
+    btn.run.addEventListener('click', () => {
+      if (state !== 'assembled' && state !== 'stopped') return;
+      hist = []; // fresh idle-detection window for this run
+      running = true; sim.setRunning(true); raf = requestAnimationFrame(frame);
+      setState('running');
+    });
+
+    btn.stop.addEventListener('click', () => {
+      if (state !== 'running') return;
+      haltLoop(); setState('stopped');
+    });
+
+    btn.step.addEventListener('click', () => {
+      if (state !== 'assembled' && state !== 'stopped') return;
+      sim.step(1); renderLEDs(); renderRegs();
+      setState('stopped');
+    });
+
+    btn.reset.addEventListener('click', () => {
+      haltLoop(); sim.reset(); renderLEDs(); renderRegs();
+      setState('assembled');
+    });
+
+    // Editing invalidates the loaded program: the machine no longer
+    // matches the editor, so fall back to 'empty' (re-Assemble). A
+    // programmatic value set (the auto-format above) does NOT fire
+    // 'input', so this never feeds back on itself.
+    srcEl.addEventListener('input', () => {
+      if (state === 'empty') return;
+      haltLoop(); setState('empty');
+    });
+
+    // Clipboard actions. flash() briefly swaps the button's label as
+    // confirmation; copyText() degrades to a status note if the
+    // Clipboard API is blocked (insecure context / permissions).
+    const flash = (sel, text) => {
+      const el = $(sel);
+      if (!el) return;
+      const prev = el.textContent;
+      el.textContent = text;
+      setTimeout(() => { el.textContent = prev; }, 1200);
+    };
+    const copyText = async (text, labelSel) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        flash(labelSel, 'Copied ✓');
+      } catch {
+        flash(labelSel, 'Copy failed');
+      }
+    };
+
+    // The "Copy for AI" bundle: enough context that an external model
+    // can actually help — what machine this is, the Layer-0 dialect, a
+    // link to the full syntax reference, the source, and the last
+    // assembler result (errors or the disassembly it produced).
+    // The Layer-0 image spans the whole ROM, so the disassembly tail is
+    // hundreds of identical uninitialized `.byte $00` lines (and tables
+    // can repeat too). Fold any run of >= THRESH lines that are
+    // identical after the address/hex columns into one summary line, so
+    // the AI bundle stays about the program, not the padding.
+    const collapseDisasm = (text, thresh = 6) => {
+      const lines = (text || '').split('\n');
+      const isRow = (s) => /^\$[0-9A-Fa-f]{4}\s/.test(s);
+      const body = (s) => s.replace(/^\$[0-9A-Fa-f]{4}\s+[0-9A-Fa-f]*\s+/, '').trim();
+      const addr = (s) => (s.match(/^\$[0-9A-Fa-f]{4}/) || [''])[0];
+      const out = [];
+      for (let i = 0; i < lines.length; ) {
+        const k = body(lines[i]);
+        if (!isRow(lines[i]) || k === '') { out.push(lines[i]); i++; continue; }
+        let j = i;
+        while (j + 1 < lines.length && isRow(lines[j + 1]) && body(lines[j + 1]) === k) j++;
+        const run = j - i + 1;
+        if (run >= thresh) {
+          out.push(`${addr(lines[i])}…${addr(lines[j])}  … ${run}× ${k} …`);
+        } else {
+          for (let m = i; m <= j; m++) out.push(lines[m]);
+        }
+        i = j + 1;
+      }
+      return out.join('\n');
+    };
+
+    const buildAIBundle = () => {
+      const syntaxURL = location.origin + '/learn/6502/syntax';
+      let asmBlock;
+      if (!lastAsm) {
+        asmBlock = 'Not assembled yet.';
+      } else if (lastAsm.ok) {
+        asmBlock =
+          `OK — ${lastAsm.bytes} bytes @ $${lastAsm.origin.toString(16).toUpperCase()}\n\n` +
+          `Disassembly:\n${collapseDisasm(lastAsm.disasm) || '(none)'}`;
+      } else {
+        asmBlock =
+          'Errors:\n' +
+          (lastAsm.errors || [])
+            .map((e) => {
+              const code = e.code ? `error[${e.code}] ` : '';
+              const where = e.line ? `line ${e.line}: ` : '';
+              const msg = e.message || (e.rendered || '').split('\n')[0] || 'assembly failed';
+              return `- ${code}${where}${msg}`;
+            })
+            .join('\n');
+      }
+      return [
+        `I'm working in an in-browser 6502 assembly lab: "${labTitle}".`,
+        `Lesson page: ${location.href}`,
+        '',
+        'Machine: go6sim "teach-min" — RAM, a 6522 VIA, and ROM, rendered as ' +
+          '8 LEDs on VIA Port B. The assembler is go6asm in Layer-0 mode ' +
+          '(target "sim-tui"): it auto-places the program and synthesizes the ' +
+          'reset vector, so no .org or interrupt vectors are needed. The symbol ' +
+          '`ViaBase` = $B000 = VIA Port B; its 8 bits drive the 8 LEDs ' +
+          '(bit 7 leftmost).',
+        '',
+        `Assembly syntax reference: ${syntaxURL}`,
+        '',
+        '--- my source ---',
+        srcEl.value.replace(/\s+$/, ''),
+        '',
+        '--- last assemble result ---',
+        asmBlock,
+        '',
+        'Please help with the above, staying within the syntax in the reference.',
+      ].join('\n');
+    };
+
+    $('.cl-copy').addEventListener('click', () =>
+      copyText(srcEl.value, '.cl-copy-label')
+    );
+    $('.cl-copy-ai').addEventListener('click', () =>
+      copyText(buildAIBundle(), '.cl-copy-ai-label')
+    );
+
+    formatEditor(); // canonicalize the seed before it's ever shown
+    setState('empty'); // wasm ready: only Assemble is meaningful yet
   })();
 </script>

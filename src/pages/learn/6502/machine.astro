@@ -1,0 +1,324 @@
+---
+// Companion reference to the syntax page: how a 6502 actually boots and
+// why CodeLab's memory is laid out the way it is. NOT a lesson (no
+// content-collection entry) — a standalone explainer the CodeLab
+// component and the syntax page link to. Beginner-facing; the technical
+// facts (reset vector at $FFFC/$FFFD, stack = page 1, zero-page speed)
+// are standard 6502 and match the go6sim teach-min preset.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+// [reg, name, size, how-often + whether you can touch it directly]
+const regs = [
+  ['A', 'Accumulator', 'byte', 'Everyday. The value you compute with — load it, do math/logic, store it.'],
+  ['X', 'Index X', 'byte', 'Everyday. Loop counters and indexed addressing (table,X).'],
+  ['Y', 'Index Y', 'byte', 'Everyday. A second index; the (zp),Y mode uses it.'],
+  ['SP', 'Stack pointer', 'byte', 'Rarely direct. Subroutine calls and interrupts move it for you; reach it only via TSX / TXS.'],
+  ['PC', 'Program counter', 'word', "Never direct. You can't load or store it — only JMP, branches, JSR / RTS and interrupts change it."],
+  ['P', 'Status flags', 'byte', 'Automatic. Set as side effects of other instructions, tested by branches; whole-byte access only via PHP / PLP.'],
+];
+
+// Status register P, bit 7 → 0. Bit 5 is unused (always reads 1) so it
+// isn't a row. D toggles but has no effect — go6sim's ADC/SBC are
+// binary-only, like the NES 2A03.
+const flags = [
+  ['7', 'N', 'Negative', "The last result's high bit (bit 7) was 1.", 'BMI / BPL'],
+  ['6', 'V', 'Overflow', 'A signed add/subtract overflowed (also set by BIT).', 'BVS / BVC'],
+  ['5', '—', '(unused)', 'No flag here — this bit always reads as 1.', '—'],
+  ['4', 'B', 'Break', 'Marks a BRK vs a hardware IRQ in the copy pushed to the stack — not a bit you toggle.', '(interrupts lesson)'],
+  ['3', 'D', 'Decimal', 'BCD-math mode. SED / CLD flip it, but CodeLab does math in binary only — no effect here.', 'SED / CLD'],
+  ['2', 'I', 'IRQ disable', 'When set, maskable interrupts are ignored.', 'SEI / CLI'],
+  ['1', 'Z', 'Zero', 'The last result was exactly zero.', 'BEQ / BNE'],
+  ['0', 'C', 'Carry', 'Carry out of an add / no borrow on subtract; the bit shifted out by shifts & rotates; set by compares.', 'BCC / BCS · CLC / SEC'],
+];
+
+const memmap = [
+  ['$0000–$00FF', 'Zero page', 'The first 256 bytes — your fastest scratch space.'],
+  ['$0100–$01FF', 'The stack', 'Hardware stack. Subroutine calls and interrupts use it for you.'],
+  ['$0200–$1FFF', 'RAM', 'General read/write memory for your data.'],
+  ['$B000', 'ViaBase', 'The VIA — storing a byte here lights the 8 LEDs.'],
+  ['$E000–$FFFF', 'ROM', 'Read-only: your program + the reset vector live here.'],
+];
+---
+
+<BaseLayout
+  title="More about the 6502 — CodeLab"
+  description="The 6502 beyond the instructions: its registers, how it starts (the reset vector), little-endian byte order, the stack, zero page, and the memory map — explained for someone new."
+>
+  <section class="container-prose py-12">
+    <div class="text-mono-tag mb-3">Reference</div>
+    <h1 class="mb-2 text-3xl font-semibold text-ink-100 tracking-tight">
+      More about the 6502
+    </h1>
+    <p class="mb-4 text-ink-300">
+      You don't need any of this to start writing programs — the
+      <a class="text-accent hover:underline" href="/learn/6502/syntax">syntax page</a>
+      is enough. But a handful of facts about how the 6502 is built make
+      CodeLab's odd-looking addresses and panels click into place. Here's
+      the short tour: what's inside the chip, how it finds your program, why
+      16-bit values look backwards in memory, and where everything lives.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">What's inside the chip — the registers</h2>
+    <p class="mb-3 text-ink-300">
+      The 6502 is tiny. Everything it can hold at once lives in six
+      <strong>registers</strong> — small named slots, each just a byte or
+      two. Think of them as the chip's hands: it can only grip a few things
+      at a time, so most of what a program <em>does</em> is shuttling values
+      between these registers and memory. You can watch all six change,
+      live, in CodeLab's <strong>CPU</strong> panel.
+    </p>
+    <div class="mb-4 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Reg</th><th class="px-3 py-2 font-medium">Name</th><th class="px-3 py-2 font-medium">Size</th><th class="px-3 py-2 font-medium">How often — and can you set it?</th></tr>
+        </thead>
+        <tbody>
+          {regs.map(([r, n, s, d]) => (
+            <tr class="border-t border-ink-800">
+              <td class="px-3 py-2 text-ink-200"><code>{r}</code></td>
+              <td class="px-3 py-2 text-ink-200">{n}</td>
+              <td class="px-3 py-2 whitespace-nowrap"><code>{s}</code> {s === 'word' ? '(16-bit)' : '(8-bit)'}</td>
+              <td class="px-3 py-2">{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mb-4 text-ink-400 text-sm">
+      In practice you spend almost all your time in <code>A</code>,
+      <code>X</code> and <code>Y</code> — the three you actually load, change
+      and store. <code>SP</code>, <code>PC</code> and <code>P</code> mostly
+      move on their own. Note the sizes: every register is a single
+      <strong>byte</strong> (8 bits, <code>$00</code>–<code>$FF</code>)
+      except <code>PC</code>, which is a 16-bit <strong>word</strong> — it
+      has to be, since it holds a full memory address. That byte-vs-word
+      split is exactly why addresses are stored as two bytes — in a
+      specific order, which the <em>little-endian</em> section below
+      explains.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">The status flags (<code>P</code>)</h2>
+    <p class="mb-3 text-ink-300">
+      <code>P</code> is special: you almost never load it directly. Instead,
+      ordinary instructions set its bits as a <em>side effect</em> — nearly
+      every operation updates <code>Z</code> and <code>N</code> from its
+      result — and the branch instructions then read one bit and jump on it.
+      That's the whole loop: do something, a flag records how it went, a
+      branch acts on it. CodeLab's CPU panel shows <code>P</code> as a hex
+      byte; these are the bits inside it, from bit&nbsp;7 down to bit&nbsp;0.
+    </p>
+    <div class="mb-3 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Bit</th><th class="px-3 py-2 font-medium">Flag</th><th class="px-3 py-2 font-medium">Name</th><th class="px-3 py-2 font-medium">Set when…</th><th class="px-3 py-2 font-medium">Act on it with</th></tr>
+        </thead>
+        <tbody>
+          {flags.map(([bit, f, n, w, b]) => (
+            <tr class="border-t border-ink-800">
+              <td class="px-3 py-2 text-ink-200"><code>{bit}</code></td>
+              <td class="px-3 py-2 text-ink-200"><code>{f}</code></td>
+              <td class="px-3 py-2 text-ink-200">{n}</td>
+              <td class="px-3 py-2">{w}</td>
+              <td class="px-3 py-2"><code>{b}</code></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mb-4 text-ink-400 text-sm">
+      (Because bit&nbsp;5 is always 1, a "cleared" <code>P</code> still
+      shows one bit set in the CPU panel — that's normal, not a stuck
+      flag.)
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">The reset vector — the 6502's <code>main()</code></h2>
+    <p class="mb-4 text-ink-300">
+      In most languages a program begins at <code>main()</code> — something
+      finds it by name and calls it. A 6502 has nothing that clever. The
+      6502 can address 64&nbsp;KB of memory: every location has an
+      address from <code>$0000</code> to <code>$FFFF</code>. On power-on (or
+      reset) the chip does one thing: it reads the two bytes at
+      <code>$FFFC</code> and <code>$FFFD</code>, glues them into a 16-bit
+      address — in a particular byte order we'll get to in a moment — and
+      jumps there. Whatever lives at that address <em>is</em> your program's
+      first instruction.
+    </p>
+    <p class="mb-4 text-ink-300">
+      Those two bytes are called the <strong>reset vector</strong>. Think of
+      it as a fixed mailbox the chip always checks first: it doesn't know
+      where your code is, so it looks up the address from a place that never
+      moves. (Two more mailboxes sit right beside it — for interrupts. You'll
+      open those in the interrupts lesson.)
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Little-endian: addresses look backwards</h2>
+    <p class="mb-4 text-ink-300">
+      Here's the part that trips everyone up the first time. A 16-bit
+      address is two bytes — a <em>low</em> half and a <em>high</em> half.
+      The 6502 always stores them <strong>low byte first</strong>, high byte
+      second. That convention is called <strong>little-endian</strong>.
+    </p>
+    <p class="mb-4 text-ink-300">
+      So the address <code>$E000</code> is laid down in memory as the byte
+      <code>$00</code> followed by the byte <code>$E0</code> — at
+      <code>$FFFC/$FFFD</code> the reset vector reads <code>00 E0</code>, not
+      <code>E0 00</code>. Glance at a hex dump and a familiar address can
+      look reversed; it isn't wrong, it's just stored low-then-high.
+    </p>
+    <p class="mb-4 text-ink-300">
+      Once you expect it, it stops surprising you — because it's
+      <em>consistent</em>. The reset vector, the target of a
+      <code>JMP</code> or <code>JSR</code>, an address baked into an
+      instruction, a <code>.word</code> you write — every 16-bit value the
+      6502 touches follows the same low-then-high rule. When you read the
+      <strong>hex dump</strong> panel and an address seems backwards, that's
+      this, working exactly as designed.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Why your program lives high in memory</h2>
+    <p class="mb-4 text-ink-300">
+      The reset vector is at <code>$FFFC/$FFFD</code> — right at the very top
+      of the address space. For the chip to start cleanly, the memory up
+      there must be dependable: it has to hold a real address the moment
+      power comes on, before anything has had a chance to run. So CodeLab's
+      machine puts the top 8&nbsp;KB — <code>$E000</code> through
+      <code>$FFFF</code> (that's <code>$2000</code> = 8192 bytes) — in
+      <strong>ROM</strong>: read-only memory that's simply <em>there</em> at
+      power-on. Your program goes in that ROM, and the reset vector points
+      into it.
+    </p>
+    <p class="mb-4 text-ink-300">
+      You never write any of this yourself — that's the
+      <strong>Layer-0</strong> deal from the
+      <a class="text-accent hover:underline" href="/learn/6502/syntax">syntax page</a>.
+      CodeLab takes your handful of instructions, places them in ROM, and
+      fills in the reset vector so it points at your first line. That
+      expanded, complete program is exactly what the <strong>hex dump</strong>
+      and <strong>disassembly</strong> panels show you — the long run of
+      empty bytes is the rest of the ROM your tiny program didn't fill.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">The stack lives at $0100</h2>
+    <p class="mb-4 text-ink-300">
+      The 6502 has a built-in <strong>stack</strong>, and it isn't anywhere
+      you choose — it's hard-wired to the 256 bytes from <code>$0100</code>
+      to <code>$01FF</code>. When you call a subroutine (<code>JSR</code>)
+      the chip pushes the return address onto that stack; <code>RTS</code>
+      pops it back. Interrupts push there too. You rarely touch it directly,
+      but it's a real, fixed part of memory — which is one reason a 6502
+      system needs working RAM down at the low addresses, starting from
+      <code>$0000</code>.
+    </p>
+    <p class="mb-4 text-ink-300">
+      So where is the stack pointer itself? <em>Not</em> in memory — it's a
+      dedicated register inside the CPU, right alongside <code>A</code>,
+      <code>X</code>, <code>Y</code> and <code>PC</code>. You can watch it
+      live as <code>SP</code> in CodeLab's <strong>CPU</strong> panel. It
+      holds just one byte — an offset — and the actual stack address is
+      always <code>$0100 + SP</code> (the high half is hard-wired to
+      <code>$01</code>, which is exactly why the stack can never leave
+      page&nbsp;1). After reset it starts at <code>$FD</code>, so the first
+      push lands near the top of page&nbsp;1 and the stack grows
+      <em>downward</em> from there. The only way to read or set it as a
+      value is <code>TSX</code> (copy <code>SP</code>→<code>X</code>) and
+      <code>TXS</code> (copy <code>X</code>→<code>SP</code>); everything
+      else — <code>JSR</code>, <code>RTS</code>, interrupts, push/pull —
+      moves it for you.
+    </p>
+    <p class="mb-4 text-ink-300">
+      That fixed size is a hard limit: <strong>256 bytes, and not one
+      more</strong>. The stack pointer is an 8-bit register; every push
+      writes a byte and counts it down, every pop counts back up. Nothing
+      checks it. Recurse too deeply — or just keep calling without
+      returning — and the pointer runs off the end and <em>wraps around</em>,
+      and new pushes start overwriting the oldest frames still sitting in
+      page&nbsp;1. There is no error, no trap, no "stack overflow" message.
+      The damage is silent: a clobbered return address means the next
+      <code>RTS</code> pops a garbage value and the CPU jumps to a more or
+      less random place. The program doesn't stop — it <em>derails</em>,
+      running whatever bytes it lands in. (This is why CodeLab's park /
+      idle detector exists: a derailed program usually ends up spinning,
+      and CodeLab notices.)
+    </p>
+    <p class="mb-4 text-ink-300">
+      The flip side of "nothing protects the stack" is "nothing stops you
+      driving it yourself." The stack pointer is just a register you can
+      read and set, and page&nbsp;1 is ordinary memory. So you don't have to
+      use <code>JSR</code>/<code>RTS</code> as given: jumping into a routine
+      with <code>JMP</code> instead of calling it skips pushing a return
+      frame entirely — the hand-rolled version of a <em>tail call</em>. You
+      can also reset the pointer to throw away frames, or hand-write return
+      addresses to build jump tables. The 6502 gives you the mechanism and
+      no guard rails; what you do with it is your calling convention.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Zero page is special — and fast</h2>
+    <p class="mb-4 text-ink-300">
+      The very first 256 bytes, <code>$0000</code>–<code>$00FF</code>, are
+      called <strong>zero page</strong>. Many instructions have a shorter,
+      faster form when the address they touch is in zero page — it takes one
+      less byte and one less clock cycle than a full 16-bit address. A few
+      addressing modes only work <em>through</em> zero page at all. The
+      practical takeaway: when you need a handful of scratch locations,
+      reach for <code>$00</code>–<code>$FF</code> first. It's the closest,
+      cheapest shelf in the workshop.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">CodeLab's memory map</h2>
+    <p class="mb-3 text-ink-300">
+      Putting it together — here's where things live in the machine the
+      labs run on:
+    </p>
+    <div class="mb-4 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Address</th><th class="px-3 py-2 font-medium">What</th><th class="px-3 py-2 font-medium">Why it matters</th></tr>
+        </thead>
+        <tbody>
+          {memmap.map(([a, w, d]) => (
+            <tr class="border-t border-ink-800">
+              <td class="px-3 py-2 text-ink-200"><code>{a}</code></td>
+              <td class="px-3 py-2 text-ink-200">{w}</td>
+              <td class="px-3 py-2">{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mb-4 text-ink-400 text-sm">
+      Everything else in the 64&nbsp;KB is simply unused by these labs —
+      that's fine, real machines have gaps too.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">The 6522 VIA — how a byte becomes light</h2>
+    <p class="mb-4 text-ink-300">
+      That <code>$B000</code> row is its own chip. The
+      <strong>6522&nbsp;VIA</strong> — short for <em>Versatile Interface
+      Adapter</em> — is a separate part, the 6502 CPU's classic companion
+      for talking to the outside world. It sits on
+      the same address bus as the RAM and ROM, but instead of storing bytes
+      it has <strong>pins</strong>: two 8-bit parallel ports (A and B) and a
+      couple of hardware timers.
+    </p>
+    <p class="mb-4 text-ink-300">
+      In this machine the VIA answers at <code>$B000</code> (the labs call
+      it <code>ViaBase</code>), and Port&nbsp;B's eight output pins are
+      wired straight to the eight LEDs. So the CPU never "knows" about LEDs
+      at all — it just stores a byte to an address. The VIA turns that byte
+      into voltage on eight pins, and the pins light the lights. That's the
+      whole trick behind talking to hardware on a 6502, and it's the same
+      chip whose <strong>Timer&nbsp;1</strong> the timer lesson uses to keep
+      time without a delay loop.
+    </p>
+
+    <div class="mt-12 border-t border-ink-800 pt-6">
+      <div class="text-mono-tag mb-3">Explore more</div>
+      <ul class="list-disc space-y-2 pl-5 text-sm text-ink-300">
+        <li><a class="text-accent hover:underline" href="/learn/6502/syntax">The assembly syntax</a> — every instruction, number and label you can write here.</li>
+        <li><a class="text-accent hover:underline" href="/learn/6502/built">How CodeLab is built</a> — the open-source layers, the two CPUs, why it runs at 1&nbsp;kHz.</li>
+        <li><a class="text-accent hover:underline" href="/learn">The lessons</a> — the hands-on series, start to finish.</li>
+        <li><a class="text-accent hover:underline" href="/codelab">Standalone CodeLab</a> — the lab on its own, no lesson around it.</li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,52 @@
+---
+title: Tables and indexed addressing
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 6
+summary: X and Y aren't just counters — they're index registers. LDA table,X reads the X-th byte of a table. Lay out an animation as a list of bytes and step a pointer through it; the LEDs play whatever you wrote down.
+tags: ['6502', 'assembly', 'indexed', 'tables', 'data']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+`X` and `Y` earn their name "**index** registers" here. `LDA patt,X`
+means "load the byte at address `patt` *plus X*." Bump `X` and you walk
+along a list of bytes in memory. That one addressing mode is how the
+6502 does arrays, strings, lookup tables — and animations.
+
+`.byte` lays raw bytes into the program — *data*, not instructions. The
+label `patt` is just the address of the first one. The loop reads
+`patt[0]`, `patt[1]`, … to the LEDs, wraps, and repeats: the lights play
+back exactly the sequence you wrote.
+
+<CodeLab
+  title="Play a pattern from a table"
+  seed={`; The LEDs play back a table of bytes.
+        LDX #$00
+loop:   LDA patt,X        ; A = patt[X]
+        STA ViaBase       ; show it
+        INX
+        CPX #$08          ; reached the end of the table?
+        BNE slow          ; no -> keep going
+        LDX #$00          ; yes -> wrap to the start
+slow:   LDY #$00
+d:      INY               ; pace it
+        BNE d
+        JMP loop
+patt:   .byte $01,$03,$07,$0F,$1F,$3F,$7F,$FF
+`}
+/>
+
+**Assemble**, then **Run**: the LEDs "fill up" left-to-right, then snap empty
+and refill — because that's literally the byte list in `patt`. Change
+the numbers and you've authored a new animation, no logic touched.
+`CPX #$08` ("**c**om**p**are **X** with 8") sets the zero flag when `X`
+hits 8 so `BNE` knows when to wrap.
+
+Try this: make `patt` a back-and-forth bounce
+(`$01,$02,$04,$08,$10,$20,$40,$80`) and grow `CPX` to match its length.
+The animation lives in the data now.
+
+Next: stop wasting cycles in `delay` loops — let the VIA's hardware
+timer set the pace.

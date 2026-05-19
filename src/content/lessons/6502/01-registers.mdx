@@ -1,0 +1,45 @@
+---
+title: The registers
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 1
+summary: The 6502 has just three working registers — A, X, and Y — each one byte wide. Almost everything the chip does is shuffling bytes through them. Load them, copy between them, and watch every move in the CPU panel.
+tags: ['6502', 'assembly', 'registers']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+The 6502 is small on purpose. For getting work done it has **three**
+registers — `A` (the accumulator), `X`, and `Y` — and each holds exactly
+one byte (0–255). That's it. Almost every program you write is moving
+bytes into these three, doing a little arithmetic, and moving them back
+out to memory.
+
+`#` keeps showing up: `LDA #$0F` means "put the *number* `$0F` into A."
+The `#` says *the value itself*. Without it (next lesson) the number
+means an *address* instead — a distinction the whole instruction set
+hangs on.
+
+<CodeLab
+  title="Loading and copying registers"
+  seed={`; Three registers, one byte each.
+        LDA #$0F          ; A = $0F
+        LDX #$80          ; X = $80
+        TAX               ; copy A into X  (X becomes $0F)
+        LDY #$AA          ; Y = $AA
+done:   JMP done          ; park
+`}
+/>
+
+Press **Step** and watch the **CPU** panel after each instruction. `A`
+becomes `$0F`. `X` becomes `$80` — then `TAX` ("**t**ransfer **A** to
+**X**") overwrites it with `$0F`. `Y` becomes `$AA`. Four instructions,
+four visible effects, nothing hidden.
+
+Try this: add `TYA` before the park (transfer Y into A) and step through
+again — predict what `A` will be before you run it, then check. Guessing
+first, then verifying, is the whole game.
+
+Next: those same numbers, but as *addresses* — and the byte shelf called
+memory.

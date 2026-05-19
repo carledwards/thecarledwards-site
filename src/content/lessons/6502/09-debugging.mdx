@@ -1,0 +1,61 @@
+---
+title: Reading the machine
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 9
+summary: Every program you write will be broken at some point — that's normal, not failure. This one is broken on purpose. Use the error panel, the disassembly, single-step, and Reset to find it, fix it, and prove it. Debugging is the actual skill.
+tags: ['6502', 'assembly', 'debugging', 'tools']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+You've written counters, walkers, table players. Every one of them, on
+the first try, will have a bug — a wrong number, a typo, a branch the
+wrong way. That's not you being bad at this; it's the job. The skill
+that matters isn't writing perfect code, it's *reading the machine* to
+find out why the code you wrote isn't the code you meant.
+
+The program below is supposed to count on the LEDs. It doesn't even
+assemble. Press **Assemble** and read what comes back — **Run** stays
+disabled until it does.
+
+<CodeLab
+  title="Find the bug"
+  seed={`; This should count on the LEDs. It won't assemble. Why?
+        LDX #$00
+loop:   STX ViaBase       ; show the count on the LEDs
+        IN                ; meant to add 1 to X
+        JMP loop
+`}
+/>
+
+The assembler panel shows a single, plain line — an `error[…]` with the
+line and what's wrong — and the editor jumps straight to the offending
+line. (Need more? expand **full error detail** for the raw report.) The
+message: **unknown instruction `IN`**. There is no 6502 opcode called
+`IN`. You meant `INX` — "**in**crement **X**" — from lesson 4. Two
+missing letters, and the assembler won't guess; it tells you exactly
+where and stops.
+
+Fix it (`IN` → `INX`), **Assemble** again, then **Run**. Now it assembles
+and the LEDs count. Confirm it with the tools, don't just trust it:
+
+- The **disassembly** shows exactly the bytes produced — `STX $B000`
+  then `INX`. The name `ViaBase` became the address `$B000`, and the
+  `INX` you just fixed is one real opcode. The names are for you; this
+  is what the chip actually sees.
+- **Stop**, then **Step** one instruction at a time and watch `X` and
+  `PC` in the **CPU** panel move through `loop`.
+- **Reset** returns to the start any time — runs are disposable, so
+  poke fearlessly.
+
+That's the loop you'll use forever: run, read the error or the state,
+form a guess, change one thing, run again. The machine never lies and
+it's small enough to fully understand — every bug in here has a reason
+you can find.
+
+You've driven the CPU by hand, lit hardware from a byte, looped,
+shifted, tabled, timed, and debugged a real 6502 — all of it transferable
+to silicon on a desk. That's the foundation; everything past here is
+just more of the same machine, in more interesting arrangements.

@@ -13,6 +13,6 @@ module github.com/carledwards/thecarledwards-site/codelab
 go 1.26.2
 
 require (
-	github.com/carledwards/go6asm v0.1.0
+	github.com/carledwards/go6asm v0.1.1
 	github.com/carledwards/go6sim v0.1.0
 )

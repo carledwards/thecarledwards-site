@@ -1,0 +1,47 @@
+---
+title: Shift and mask
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 5
+summary: ASL slides every bit one position left — so a single lit LED walks across the row. Shifting is how you move bits, build masks, and multiply by two, all with one instruction. Watch one light march left and fall off the end.
+tags: ['6502', 'assembly', 'bitwise', 'shift']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+You've moved whole bytes. Now move *bits*. `ASL` ("**a**rithmetic
+**s**hift **l**eft") slides every bit in `A` one place to the left; a
+zero comes in at the bottom and the top bit falls off into the carry.
+So `%00000001` becomes `%00000010`, then `%00000100` — one lit LED
+walking left. (It's also a free multiply-by-two, but the lights make it
+obvious.)
+
+When the bit walks off the top, `A` becomes `0`. We catch that with a
+branch and start the bit over at the right, so the light loops forever.
+
+<CodeLab
+  title="One LED, walking left"
+  seed={`; A single lit LED marches left, then restarts.
+        LDA #$01          ; light the rightmost LED
+walk:   STA ViaBase       ; show it
+        ASL               ; slide the bit one LED left
+        BNE skip          ; still on? keep this value
+        LDA #$01          ; fell off the top -> restart at bit 0
+skip:   LDX #$00
+slow:   INX               ; slow it down so the eye can follow
+        BNE slow
+        JMP walk
+`}
+/>
+
+**Assemble**, then **Run**: one LED sweeps left, drops off, reappears on the
+right. Step through one pass to see `A` double each time —
+`$01, $02, $04, $08 …` — and watch the `BNE` decide whether to restart.
+
+Try this: swap `ASL` for `LSR` (shift *right*) and start with
+`LDA #$80` — now it walks the other way. Or `ROL` (rotate left) so the
+top bit wraps around instead of falling off — predict what that does to
+the loop before you run it.
+
+Next: stop hand-computing patterns — read them from a table.

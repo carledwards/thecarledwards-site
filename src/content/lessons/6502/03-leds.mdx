@@ -1,0 +1,50 @@
+---
+title: The 8 LEDs are one byte
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 3
+summary: "One memory address — $B000, a port on the 6522 VIA chip — is wired to eight LEDs. Store a byte there and the bits become light: a 1 lights an LED, a 0 leaves it dark. This is memory-mapped I/O, and the exact same store runs on a real lcm-32 board."
+tags: ['6502', 'assembly', 'io', 'via', 'leds']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+Here's the payoff. One special address — **`$B000`**, *Port B* of the
+6522 VIA chip — isn't ordinary memory. Its eight bits are physically
+wired to the eight LEDs. Store a byte there and you see it: bit 7 → the
+left LED, bit 0 → the right one. A `1` lights; a `0` stays dark.
+
+The **6522 VIA** — short for *Versatile Interface Adapter* — is a
+separate chip, the 6502 CPU's classic companion for reaching the
+outside world. Instead of storing bytes like RAM, it has *pins*; here
+Port B's eight pins go to the eight LEDs.
+([More about the 6522 VIA →](/learn/6502/machine))
+
+That's **memory-mapped I/O** — the whole trick behind talking to
+hardware on a 6502. There's no special "output" instruction; you just
+`STA` to an address that happens to be a chip instead of RAM. The
+assembler gives that address the friendly name `ViaBase`.
+
+<CodeLab
+  title="A byte becomes light"
+  seed={`; The 8 LEDs ARE one byte. Write it, see it.
+        LDA #%01011010    ; bits 6,4,3,1 set
+        STA ViaBase       ; ViaBase = $B000 = VIA port B = the LEDs
+done:   JMP done          ; park (LEDs hold their last value)
+`}
+/>
+
+Press **Assemble**, then **Run**. The pattern `%01011010` appears on the LEDs
+and stays — the park doesn't clear them; the port holds whatever you
+last wrote, exactly like the real chip. `%` means the number is written
+in binary, so you can *see* the bits you're setting.
+
+Try this: change the binary to `%10000001`, or use `LDA #$FF` (all on)
+or `#$00` (all off). Predict the lights before you run.
+
+This same `STA ViaBase` runs, unmodified, on a real lcm-32 board with
+real LEDs. Nothing here is a toy stand-in — it's the actual instruction
+the actual chip executes.
+
+Next: make the byte *change* — a counter the LEDs display.

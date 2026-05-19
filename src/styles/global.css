@@ -42,6 +42,48 @@
   --accent-dim: 24 99 44; /*        #18632c                              */
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   Interactive learn widgets (`.learn-device`) are dark "instruments" in
+   BOTH themes — a real device on the desk. Their inset screens, LED
+   faces and gradients are intentionally hardcoded dark; their text and
+   LEDs use the themed ink/accent tokens. In light mode those tokens
+   would flip dark and become unreadable on the still-dark screens, so
+   inside a device we re-pin the palette to the dark values. The page,
+   prose and chrome around the device still go Solarized-light. (The
+   dark rendering is the known-good one, reused verbatim — zero per-rule
+   color edits.)
+   ───────────────────────────────────────────────────────────────────── */
+:root.light .learn-device {
+  color-scheme: dark;
+  --ink-950: 10 12 16;
+  --ink-900: 13 17 23;
+  --ink-800: 34 42 53;
+  --ink-700: 33 38 45;
+  --ink-600: 48 54 61;
+  --ink-500: 201 209 217;
+  --ink-400: 139 148 158;
+  --ink-300: 177 186 196;
+  --ink-200: 201 209 217;
+  --ink-100: 230 237 243;
+  --accent: 126 231 135;
+  --accent-dim: 86 211 100;
+}
+
+/* Lift the device *chassis* one step (the body the LEDs/labels sit on)
+   in BOTH themes. The inset screens (`rgba(0,0,0,.55)`) and the LED
+   domes (near-black gradients) don't use this token, so they stay dark
+   — the gap between chassis and screen/LED is what gives the device
+   depth and makes unlit lights read. */
+.learn-device {
+  --ink-800: 34 42 53;
+  /* Lift the faintest text token (dim labels + unlit "0" digits) to the
+     same brightness as the body/code text so it reads cleanly on the
+     chassis (= --ink-200). A binary row still says "0" vs "1" by
+     *color* — gray 0 vs accent-green 1 — so this doesn't cost the
+     at-a-glance read. */
+  --ink-500: 201 209 217;
+}
+
 /* Ease the swap rather than hard-cut. Transform/opacity excluded so
    animations and interactive widgets aren't affected. */
 :root,

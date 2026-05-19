@@ -1,0 +1,169 @@
+---
+// Learner-facing syntax reference for the CodeLab labs. NOT a lesson
+// (no content-collection entry) — a standalone reference the CodeLab
+// component links to as a popout and embeds in its "Copy for AI"
+// bundle. Scoped to exactly the go6asm Layer-0 / target "sim-tui"
+// dialect the 6502 curriculum uses, not the full assembler spec.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const instr = [
+  ['Load / store', 'LDA LDX LDY STA STX STY', 'Move a byte between A/X/Y and memory.'],
+  ['Count', 'INX INY DEX DEY INC DEC', 'Add or subtract 1 (registers, or a memory cell).'],
+  ['Math', 'ADC SBC', 'Add / subtract with carry (clear carry first: CLC / SEC).'],
+  ['Bits', 'AND ORA EOR', 'Bitwise on A with a value or memory.'],
+  ['Shift', 'ASL LSR ROL ROR', 'Shift / rotate A (or memory) one bit.'],
+  ['Compare', 'CMP CPX CPY', 'Compare a register to a value; sets flags for a branch.'],
+  ['Branch', 'BNE BEQ BCC BCS BMI BPL', 'Jump only if the last result set that flag.'],
+  ['Jump / call', 'JMP JSR RTS', 'Unconditional jump; call a subroutine; return from one.'],
+  ['Interrupt', 'SEI CLI RTI BRK', 'Mask / unmask IRQs; return from / trigger an interrupt (lesson 8).'],
+  ['Transfer', 'TAX TXA TAY TYA TSX TXS', 'Copy between registers / stack pointer.'],
+  ['Flags / misc', 'CLC SEC PHA PLA NOP', 'Carry control, push/pull A, do nothing.'],
+];
+
+const modes = [
+  ['Immediate', 'LDA #$2A', 'The number itself. `#` = literal value.'],
+  ['Absolute', 'STA ViaBase / STA $B000', 'A 16-bit address (a label or `$nnnn`).'],
+  ['Zero page', 'LDA $10', 'An address in $00–$FF (one byte, faster).'],
+  ['Indexed', 'LDA table,X', 'Address + the X (or Y) register.'],
+  ['Implied', 'INX', 'No operand — the instruction says it all.'],
+  ['Relative', 'BNE loop', 'A branch target (a label); the assembler computes the offset.'],
+];
+---
+
+<BaseLayout
+  title="6502 assembly syntax — CodeLab"
+  description="The exact assembly CodeLab understands, explained for someone new to the 6502 — the small set of instructions, numbers, and labels the labs use."
+>
+  <section class="container-prose py-12">
+    <div class="text-mono-tag mb-3">Reference</div>
+    <h1 class="mb-2 text-3xl font-semibold text-ink-100 tracking-tight">
+      6502 assembly syntax
+    </h1>
+    <p class="mb-4 text-ink-300">
+      Assembly is the most direct way to talk to the 6502: one short line
+      for each step the chip takes. Before it can run, a program called an
+      <em>assembler</em> turns those lines into the raw bytes the processor
+      actually executes — CodeLab uses one named
+      <a class="text-accent hover:underline" href="https://github.com/carledwards/go6asm">go6asm</a>.
+      Everything you can write in CodeLab is on this page, and that's the
+      whole point: it's a small vocabulary, on purpose.
+    </p>
+    <p class="mb-4 text-ink-300">
+      A real 6502 program carries a lot of bookkeeping around it — deciding
+      <em>where</em> in memory the program lives, and telling the chip how to
+      find it the instant it powers on. CodeLab fills all of that in for you,
+      so your attention goes to the instructions themselves and not the
+      plumbing. This simplified way of writing — just the instructions, none
+      of the scaffolding — has a name: we call it <strong>Layer-0</strong>.
+      Under the hood your short program is <em>expanded</em> into a complete,
+      valid 6502 program; that fuller version is exactly what you see in the
+      hex dump and disassembly. Want the bigger picture — the registers,
+      how the chip finds your code, the memory map? See
+      <a class="text-accent hover:underline" href="/learn/6502/machine">More about the 6502</a>.
+    </p>
+    <p class="mb-8 text-ink-300">
+      One more bit of help: every time you assemble, the editor lines your
+      code up onto a tidy, consistent grid. Don't fuss over spacing — type
+      it however you like and let CodeLab make it neat.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">The shape of a program</h2>
+    <ul class="mb-4 list-disc space-y-1 pl-5 text-ink-300">
+      <li><strong>One instruction per line.</strong> Whitespace doesn't matter; the formatter fixes alignment.</li>
+      <li><strong>Comments</strong> start with <code>;</code> and run to end of line. A whole line can be a comment.</li>
+      <li><strong>No setup needed.</strong> CodeLab decides where your
+        program lives in memory and wires up how the chip starts it — you
+        write none of that. Begin with your first instruction.</li>
+      <li><strong>A 6502 never ends.</strong> Give it somewhere to spin —
+        the <em>park</em> idiom: <code>done: JMP done</code>. CodeLab detects a
+        park and stops cleanly.</li>
+    </ul>
+    <pre class="mb-2 overflow-auto rounded-md border border-ink-800 bg-ink-950 p-4 text-[13px] leading-relaxed text-ink-200"><code>; a full-line comment
+        LDA #$2A          ; load the number 42 into A
+        STA ViaBase       ; show it on the 8 LEDs
+done:   JMP done          ; park here forever</code></pre>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Labels &amp; symbols</h2>
+    <ul class="mb-4 list-disc space-y-1 pl-5 text-ink-300">
+      <li>Define a label by writing <code>name:</code> — it marks the address
+        of the next instruction. Use the bare name as an operand
+        (<code>JMP loop</code>, <code>BNE loop</code>).</li>
+      <li>Names are letters, digits and <code>_</code>, not starting with a
+        digit. <code>@local:</code> is a short-lived local label.</li>
+      <li><code>ViaBase</code> is built in: it equals <code>$B000</code>, the
+        VIA's Port B. Storing a byte there lights the 8 LEDs — bit 7 on the
+        left, bit 0 on the right.</li>
+    </ul>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Numbers</h2>
+    <ul class="mb-4 list-disc space-y-1 pl-5 text-ink-300">
+      <li><code>$2A</code> — hexadecimal &nbsp;·&nbsp; <code>%00101010</code> — binary &nbsp;·&nbsp; <code>42</code> — decimal. All the same value.</li>
+      <li><code>#</code> means <strong>the number itself</strong> (immediate):
+        <code>LDA #$2A</code> loads 42. Without <code>#</code> it's an
+        <strong>address</strong>: <code>LDA $2A</code> loads from memory
+        location $2A.</li>
+    </ul>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Addressing modes</h2>
+    <div class="mb-4 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Mode</th><th class="px-3 py-2 font-medium">Looks like</th><th class="px-3 py-2 font-medium">Meaning</th></tr>
+        </thead>
+        <tbody>
+          {modes.map(([m, ex, d]) => (
+            <tr class="border-t border-ink-800">
+              <td class="px-3 py-2 text-ink-200">{m}</td>
+              <td class="px-3 py-2"><code>{ex}</code></td>
+              <td class="px-3 py-2">{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Instructions used in these labs</h2>
+    <div class="mb-4 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Group</th><th class="px-3 py-2 font-medium">Mnemonics</th><th class="px-3 py-2 font-medium">What they do</th></tr>
+        </thead>
+        <tbody>
+          {instr.map(([g, ms, d]) => (
+            <tr class="border-t border-ink-800">
+              <td class="px-3 py-2 text-ink-200">{g}</td>
+              <td class="px-3 py-2"><code>{ms}</code></td>
+              <td class="px-3 py-2">{d}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mb-4 text-ink-400 text-sm">
+      That's not the whole 6502 — it's the part the curriculum uses. The full
+      instruction set is standard 6502; the
+      <a class="text-accent hover:underline" href="https://github.com/carledwards/go6asm">go6asm</a>
+      project documents the complete assembler.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Directives</h2>
+    <ul class="mb-4 list-disc space-y-1 pl-5 text-ink-300">
+      <li><code>.byte $01,$03,$07</code> — emit raw bytes (a table).
+        <code>.word</code> emits 16-bit values.</li>
+      <li>That's all you need in CodeLab. The assembler can do much more,
+        but it's kept out of your way here. The one place you reach past
+        this is the interrupts lesson, where you deliberately take over how
+        the chip responds to a hardware signal.</li>
+    </ul>
+
+    <div class="mt-12 border-t border-ink-800 pt-6">
+      <div class="text-mono-tag mb-3">Explore more</div>
+      <ul class="list-disc space-y-2 pl-5 text-sm text-ink-300">
+        <li><a class="text-accent hover:underline" href="/learn/6502/machine">More about the 6502</a> — registers, the status flags, how it boots, the 6522 VIA, the memory map.</li>
+        <li><a class="text-accent hover:underline" href="/learn/6502/built">How CodeLab is built</a> — the open-source layers, the two CPUs, why it runs at 1&nbsp;kHz.</li>
+        <li><a class="text-accent hover:underline" href="/learn">The lessons</a> — the hands-on series, start to finish.</li>
+        <li><a class="text-accent hover:underline" href="/codelab">Standalone CodeLab</a> — the lab on its own, no lesson around it.</li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

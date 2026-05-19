@@ -1,0 +1,43 @@
+---
+title: Memory and the zero page
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 2
+summary: "Memory is a long shelf of byte-sized slots, each with an address. STA puts a register's byte into a slot; LDA picks one back up. The first 256 slots — the zero page — are special: shorter, faster, and where real 6502 code keeps its working variables."
+tags: ['6502', 'assembly', 'memory', 'zero-page']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+A register holds one byte *right now*. To keep more than three bytes
+around, you put them in **memory** — a long shelf of slots numbered
+`$0000` upward. `STA $10` means "**st**ore **A** into slot `$10`."
+`LDA $10` picks that byte back up. Same number, no `#`: now it's an
+*address*, not a value.
+
+The first 256 slots, `$00`–`$FF`, are the **zero page**. The 6502 can
+reach them with a one-byte address instead of two, so zero-page code is
+smaller and faster. Real 6502 programs keep their hot variables here —
+you will too.
+
+<CodeLab
+  title="Store a byte, prove it stuck"
+  seed={`; Put a byte down, change A, pick the byte back up.
+        LDA #$42          ; A = $42
+        STA $10           ; memory[$10] = $42
+        LDA #$00          ; A = $00  (A is clobbered...)
+        LDA $10           ; ...but $10 still holds $42 -> A = $42
+done:   JMP done          ; park
+`}
+/>
+
+Step through. After `STA $10`, `A` is still `$42` but now `$10` holds a
+copy. `LDA #$00` wipes `A`. The last line reaches back into memory and
+`A` is `$42` again — the byte was *safe on the shelf* the whole time.
+Memory is just somewhere to put bytes so a register can be reused.
+
+Try this: store `$42` to `$10`, then to `$11`, then load `$11` — the
+shelf has 8192 slots; you're only touching two.
+
+Next: the slot the LEDs live in. One store, and a byte becomes light.

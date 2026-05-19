@@ -1,0 +1,47 @@
+---
+title: Loops and branches
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 4
+summary: A program that runs once is barely a program. INX adds one to X; BNE jumps back if the result isn't zero. Put a store, an increment, and a branch in a loop and the LEDs become a live binary counter you can watch tick.
+tags: ['6502', 'assembly', 'loops', 'branches']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+Real programs *repeat*. The 6502 loops with two pieces: an instruction
+that changes something (`INX` — increment `X` by one), and a **branch**
+that decides whether to go back. `BNE target` means "**b**ranch if **n**ot
+**e**qual to zero" — it jumps to `target` unless the last result was
+zero.
+
+Below, `X` counts `0, 1, 2, …` and each value is shown on the LEDs.
+The inner `delay` loop does nothing useful on purpose: it spins `Y` from
+0 back to 0 (256 steps) just to slow the count down enough to watch.
+`INY` / `BNE delay` is the same loop shape, smaller.
+
+<CodeLab
+  title="A binary counter on the LEDs"
+  seed={`; Count on the LEDs, forever.
+        LDX #$00
+loop:   STX ViaBase       ; show X on the 8 LEDs
+        INX               ; X = X + 1  (wraps 255 -> 0)
+        LDY #$00
+delay:  INY               ; burn time so we can see it
+        BNE delay         ; until Y wraps back to 0
+        JMP loop          ; do it all again
+`}
+/>
+
+Press **Assemble**, then **Run**. The LEDs count in binary — watch the rightmost
+LED toggle fastest, the leftmost slowest, exactly like a car odometer in
+base 2. Press **Stop**, then **Step** a few times to see one increment
+crawl through the loop. (This program *never parks* — it's meant to run
+forever, so CodeLab lets it.)
+
+Try this: change `JMP loop` to count by twos (add a second `INX`), or
+make the delay shorter and watch it blur.
+
+Next: instead of counting, *walk* a single lit LED — and meet the shift
+instructions.

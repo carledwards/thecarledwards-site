@@ -1,0 +1,58 @@
+---
+title: Timing with the VIA Timer
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 7
+summary: A delay loop wastes the CPU and times nothing accurately. The 6522 VIA has a real hardware timer (T1) ticking on its own crystal. Arm it, then poll its flag — the count now advances on a precise beat while you learn how peripheral registers work.
+tags: ['6502', 'assembly', 'via', 'timer', 'hardware']
+draft: false
+---
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+The `delay` loop was honest but crude — it burns the CPU and its timing
+drifts with clock speed. Real hardware has a **timer**. The 6522 VIA's
+**Timer 1** counts down on the chip's own 1&nbsp;MHz crystal,
+independent of the CPU, and raises a flag when it hits zero.
+
+Three register groups (the assembler names them): `ViaACR` picks the
+timer's mode (`$40` = free-running — reload and keep going), `ViaT1C_*`
+sets the count (writing the *high* byte arms it), and `ViaIFR` is the
+**interrupt flag register** — bit 6 (`ViaT1Bit`) goes high on underflow.
+`BIT` is the trick for reading it: `BIT ViaIFR` copies that bit straight
+into the V flag without disturbing `A`, so `BVC` can spin on it.
+
+<CodeLab
+  title="Count, paced by Timer 1"
+  seed={`; Let the VIA timer set the beat, not a busy-loop.
+        LDA #$40
+        STA ViaACR        ; Timer 1: free-running
+        LDA #$00
+        STA ViaT1L_L      ; reload latch (low)
+        STA ViaT1L_H      ; reload latch (high)
+        LDA #$80
+        STA ViaT1C_L      ; counter low
+        LDA #$40
+        STA ViaT1C_H      ; counter high -> arms & starts T1
+        LDX #$00
+loop:   STX ViaBase       ; show the count
+        INX
+wait:   BIT ViaIFR        ; T1 underflowed? bit 6 -> V flag
+        BVC wait          ; not yet -> keep waiting
+        LDA #ViaT1Bit
+        STA ViaIFR        ; clear the T1 flag (write-1-to-clear)
+        JMP loop
+`}
+/>
+
+**Assemble**, then **Run**: the same counter, but each step now lands on the
+timer's beat instead of a guessed loop count. Open the **disassembly**
+and **CPU** panels — the count advances exactly when T1 fires. Reading
+`ViaT1C_L` would also clear the flag (the classic 65C22 "ack" trick);
+here we write `ViaIFR` explicitly so the mechanism is visible.
+
+Try this: change the `ViaT1C_H` value (`$40` → `$10`) and watch the beat
+speed up — you're reprogramming a hardware timer in flight.
+
+Next: instead of *polling* that flag, let the timer **interrupt** the
+CPU — and write your first interrupt handler.

@@ -1,0 +1,124 @@
+---
+// "How the soup is made" — the layers and open-source repos behind
+// CodeLab, for people who want to go past using it. NOT a lesson (no
+// content-collection entry); a standalone colophon linked from the
+// CodeLab toolbar and the other reference pages. Keep it short and
+// honest — every claim here maps to a real, public repo.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const layers = [
+  [
+    'The page',
+    'Astro + WebAssembly',
+    null,
+    'Just hosts the two programs below and wires up the buttons. Nothing runs on a server — the moment the page loads, it all runs on your machine.',
+  ],
+  [
+    'go6asm',
+    'The assembler',
+    'https://github.com/carledwards/go6asm',
+    'Turns your text into real 6502 bytes — and also does the canonical formatter, the error messages, and the disassembly you see. Compiled to WebAssembly.',
+  ],
+  [
+    'go6sim',
+    'The machine',
+    'https://github.com/carledwards/go6sim',
+    'A 6502 with RAM, ROM and a 6522 VIA, wired together on a small software backplane. The headless core is compiled to WebAssembly and runs your bytes.',
+  ],
+  [
+    '6502-netsim-go',
+    'The CPU, faithfully',
+    'https://github.com/carledwards/6502-netsim-go',
+    'A transistor-level simulation of the actual 6502. go6sim can run it as its CPU when faithfulness matters more than speed.',
+  ],
+];
+---
+
+<BaseLayout
+  title="How CodeLab is built — CodeLab"
+  description="The layers and open-source repositories behind CodeLab: a Go assembler and a Go 6502 simulator, both compiled to WebAssembly and run entirely in your browser."
+>
+  <section class="container-prose py-12">
+    <div class="text-mono-tag mb-3">Colophon</div>
+    <h1 class="mb-2 text-3xl font-semibold text-ink-100 tracking-tight">
+      How CodeLab is built
+    </h1>
+    <p class="mb-4 text-ink-300">
+      Nothing in these labs is a video or a mockup. When you press
+      <strong>Assemble</strong> a real assembler runs; when you press
+      <strong>Run</strong> a real 6502 runs your bytes. Both are small Go
+      programs compiled to WebAssembly, so they run entirely in your
+      browser — there's no server doing the work. It's all open source. If
+      you want to see how the soup is made, here's the stack, top to
+      bottom.
+    </p>
+
+    <div class="mb-4 overflow-auto rounded-md border border-ink-800">
+      <table class="w-full text-left text-[13px] text-ink-300">
+        <thead class="bg-ink-900 text-ink-400">
+          <tr><th class="px-3 py-2 font-medium">Layer</th><th class="px-3 py-2 font-medium">Role</th><th class="px-3 py-2 font-medium">What it is</th></tr>
+        </thead>
+        <tbody>
+          {layers.map(([name, role, href, what]) => (
+            <tr class="border-t border-ink-800 align-top">
+              <td class="px-3 py-2 text-ink-200 whitespace-nowrap">
+                {href ? (
+                  <a class="text-accent hover:underline" href={href} target="_blank" rel="noopener">{name} ↗</a>
+                ) : (
+                  <span>{name}</span>
+                )}
+              </td>
+              <td class="px-3 py-2 text-ink-200 whitespace-nowrap">{role}</td>
+              <td class="px-3 py-2">{what}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">Two CPUs — and which one you're running</h2>
+    <p class="mb-4 text-ink-300">
+      go6sim can run the 6502 two different ways. One is an
+      <strong>instruction-level interpreter</strong>: it knows what each
+      opcode does and just does it — fast, and plenty accurate for learning.
+      The other is <strong>6502-netsim-go</strong>, a
+      <strong>transistor-level</strong> model that simulates the actual gates
+      inside the chip — about as faithful as it gets, and much slower.
+    </p>
+    <p class="mb-4 text-ink-300">
+      <strong>CodeLab runs the interpreter.</strong> It has to: the
+      transistor model is too slow to drive a responsive page. The netsim
+      CPU earns its keep elsewhere — both run the same program and the
+      results are checked against each other, so the fast one you're using
+      is held honest by the slow one you're not.
+    </p>
+
+    <h2 class="mb-2 mt-10 text-xl font-semibold text-ink-100">How fast it runs</h2>
+    <p class="mb-4 text-ink-300">
+      A real 6502 typically ran near <strong>1&nbsp;MHz</strong> — about a
+      million cycles a second. CodeLab deliberately runs it at roughly
+      <strong>1&nbsp;kHz</strong>, a thousand cycles a second — about a
+      thousand times slower. That's on purpose: at full speed a counter
+      would blur the LEDs into a smear. Slowed down, you can watch each
+      step happen, which is the entire point. The chip isn't different —
+      only the clock driving it is, and the clock is just another knob.
+    </p>
+
+    <p class="mb-4 text-ink-300">
+      The whole thing is deliberately small. That's the same idea as the
+      lessons: a system you can actually read top to bottom is a system you
+      can actually understand. Clone a repo and poke at it — same invitation
+      as the labs, one level down.
+    </p>
+
+    <div class="mt-12 border-t border-ink-800 pt-6">
+      <div class="text-mono-tag mb-3">Explore more</div>
+      <ul class="list-disc space-y-2 pl-5 text-sm text-ink-300">
+        <li><a class="text-accent hover:underline" href="/learn/6502/syntax">The assembly syntax</a> — every instruction, number and label you can write here.</li>
+        <li><a class="text-accent hover:underline" href="/learn/6502/machine">More about the 6502</a> — registers, the status flags, how it boots, the 6522 VIA, the memory map.</li>
+        <li><a class="text-accent hover:underline" href="/learn">The lessons</a> — the hands-on series, start to finish.</li>
+        <li><a class="text-accent hover:underline" href="/codelab">Standalone CodeLab</a> — the lab on its own, no lesson around it.</li>
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

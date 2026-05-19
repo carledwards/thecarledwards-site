@@ -11,7 +11,7 @@ type Lesson = (typeof all)[number];
 // Explicit series order on the /learn index. Series listed here
 // appear in this order; any others fall in after, in the order
 // their first lesson is encountered.
-const SERIES_ORDER = ['binary', 'computer', 'building'];
+const SERIES_ORDER = ['binary', 'computer', '6502', 'building'];
 
 const seriesMap = new Map<string, { title: string; lessons: Lesson[] }>();
 for (const l of all) {
@@ -29,6 +29,16 @@ const seriesList = Array.from(seriesMap.entries()).sort(([a], [b]) => {
   if (bi === -1) return -1;
   return ai - bi;
 });
+
+// Reference pages that belong to a series but aren't lessons. Surfaced
+// in that series' block so they're discoverable from the index.
+const seriesRefs: Record<string, { href: string; label: string }[]> = {
+  '6502': [
+    { href: '/learn/6502/syntax', label: 'Assembly syntax' },
+    { href: '/learn/6502/machine', label: 'More about the 6502' },
+    { href: '/learn/6502/built', label: 'How CodeLab is built' },
+  ],
+};
 ---
 
 <BaseLayout
@@ -48,9 +58,46 @@ const seriesList = Array.from(seriesMap.entries()).sort(([a], [b]) => {
     </p>
   </section>
 
+  <section class="container-wide pb-20">
+    <div class="max-w-2xl border-l-2 border-accent/50 pl-5 sm:pl-6">
+      <div class="text-mono-tag mb-3">Why this exists</div>
+      <div class="space-y-4 text-ink-300 leading-relaxed">
+        <p>
+          Binary, "binary math," how a chip actually runs — these get a
+          reputation for being elusive. I don't think they're hard. They're
+          usually explained from the top down, in the abstract, and the
+          moment where it would have clicked gets skipped. People who'd
+          given up on binary have walked through this and now get it.
+          That's the whole point — fill the gap, not guard it.
+        </p>
+        <p>
+          So it runs the other way: by hand, by doing, the smallest real
+          version of each idea, built by you — and built AI-forward, so you
+          can pull the full context into your assistant whenever you want
+          to go deeper.
+          <a class="text-accent hover:underline" href="/blog/from-a-single-bit-to-a-real-cpu/">Here's the story behind it&nbsp;→</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-wide pb-10">
+    <div class="text-mono-tag mb-3">Jump to</div>
+    <div class="flex flex-wrap gap-2">
+      {seriesList.map(([key, { title }]) => (
+        <a
+          href={`#${key}`}
+          class="rounded-md border border-ink-800 bg-ink-900 px-3 py-1.5 text-sm text-ink-300 hover:border-accent hover:text-accent"
+        >
+          {title}
+        </a>
+      ))}
+    </div>
+  </section>
+
   <section class="container-wide pb-24 space-y-12">
     {seriesList.map(([key, { title, lessons }]) => (
-      <div id={key} class="rounded-lg border border-ink-800 bg-ink-900 overflow-hidden">
+      <div id={key} class="scroll-mt-8 rounded-lg border border-ink-800 bg-ink-900 overflow-hidden">
         <div class="p-6 sm:p-8 border-b border-ink-800">
           <div class="text-mono-tag mb-2">Series</div>
           <h2 class="text-2xl font-semibold tracking-tight text-ink-100">
@@ -59,6 +106,14 @@ const seriesList = Array.from(seriesMap.entries()).sort(([a], [b]) => {
           <p class="mt-2 text-ink-400 text-sm">
             {lessons.length} lesson{lessons.length === 1 ? '' : 's'}
           </p>
+          {seriesRefs[key] && (
+            <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+              <span class="font-mono text-[11px] uppercase tracking-wider text-ink-500">References</span>
+              {seriesRefs[key].map((r) => (
+                <a class="text-accent hover:underline" href={r.href}>{r.label}</a>
+              ))}
+            </div>
+          )}
         </div>
         <ul class="divide-y divide-ink-800">
           {lessons.map((l) => (

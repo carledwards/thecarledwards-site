@@ -1,0 +1,48 @@
+---
+title: Interrupts
+series: "6502"
+seriesTitle: "The 6502, by doing"
+order: 8
+summary: Polling a flag means asking "are we there yet?" forever. An interrupt lets the timer tap the CPU on the shoulder instead — it drops what it's doing, runs your handler, and resumes. You take over the IRQ vector and write your first ISR.
+tags: ['6502', 'assembly', 'interrupts', 'via', 'isr']
+draft: true
+---
+
+{/*
+  GATED — not yet shippable. This lesson needs:
+   (1) go6asm beyond Layer-0: taking over the $FFFE IRQ vector is a
+       directive-level move (the §11 "Layer-1/2" path), not the
+       Layer-0 inference the other lessons use.
+   (2) <CodeLab> to expose a per-lesson assemble option (it currently
+       hardcodes simple:true / Layer-0). Add a `layer` / `simple` prop
+       and the exact go6asm vector-takeover syntax must be verified.
+  Hardware IRQ delivery itself is DONE (go6sim brick 9b, interp+netsim).
+  Keep draft:true until (1)+(2) land; prose below is the intended shape.
+*/}
+
+import CodeLab from '../../../components/learn/CodeLab.astro';
+
+Lesson 7 ended with the CPU stuck in `wait:` asking the timer "done
+yet?" over and over. That's *polling* — simple, but the CPU can't do
+anything else while it asks. An **interrupt** flips it around: the timer
+yanks the CPU's attention the instant it fires. The CPU finishes its
+current instruction, jumps to a handler you wrote (the **ISR** —
+interrupt service routine), and when the ISR runs `RTI` it picks up
+exactly where it left off, as if nothing happened.
+
+To make that work you point the 6502's **IRQ vector** (`$FFFE`) at your
+ISR, enable the timer's interrupt in the VIA (`ViaIER`), and `CLI` to
+let interrupts through. The main program is then free to do *nothing* —
+or anything — while the ISR advances the LEDs on the timer's beat.
+
+This is the first time you'll reach past "just instructions" and tell
+the assembler where something goes — which is exactly when that extra
+control earns its keep.
+
+Once running, set a **break-on-interrupt** and CodeLab stops the moment
+control transfers — you can single-step *into* the ISR and watch the
+return address sitting on the stack. Seeing the hand-off is the lesson.
+
+_(This lesson is being finished — the runtime (hardware IRQ on both CPU
+cores) is already done; the in-browser editor needs its non-Layer-0
+path wired before the live lab is enabled.)_
