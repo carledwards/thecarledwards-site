@@ -132,6 +132,35 @@ const projects: Project[] = [
     ],
   },
   {
+    slug: 'u64shell',
+    title: 'u64shell',
+    tagline:
+      "A DOS-style TUI that mirrors a real Commodore 64 Ultimate's screen live and remote-controls it — in your terminal or your browser, from one codebase.",
+    blurb:
+      "Reconstructs the C64's display from device memory about once a second — text (hi-res, extended-background, and multicolor character modes), bitmap modes, hardware sprites, and the border — and composites it into a live Screen window, alongside a Text Screen, a Sprite Inspector, and a command window (RESET, TYPE, RUN, POKE, PEEK…). Built on foxpro-go over the u64ctl core. The same Go source runs as a terminal TUI (Unicode half-blocks) and as a WebAssembly app drawing real pixels on an HTML canvas; a small broker serializes device access across tools and proxies the calls, so the browser build has no CORS problem.",
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'WebAssembly', 'TUI', 'Commodore 64', 'Retro-tech'],
+    hero: '/images/u64shell/u64shell_in_browser_1.png',
+    links: [
+      { label: 'Source', href: 'https://github.com/carledwards/u64shell' },
+    ],
+  },
+  {
+    slug: 'u64ctl',
+    title: 'u64ctl',
+    tagline:
+      'A CLI, an MCP server, and a WebAssembly library for controlling an Ultimate 64 over its REST API.',
+    blurb:
+      "The device core beneath u64shell: a typed operations layer with a separate render layer, so one set of logic drives every front-end. Read, write, and disassemble memory; assemble-and-run 6502 source (via go6asm); upload and run programs and cartridges — .prg, .crt, raw ROM .bin wrapped on the fly as Ultimax or standard 8K/16K carts, and .t64 tapes; inject keystrokes; and drive machine control (reset, reboot, pause, menu, power). An MCP server exposes the same operations to Claude, and a network-included WebAssembly build proves the core runs anywhere.",
+    status: 'Active',
+    year: '2026',
+    tags: ['Go', 'CLI', 'MCP', 'WebAssembly', '6502', 'Commodore 64'],
+    links: [
+      { label: 'Source', href: 'https://github.com/carledwards/u64ctl' },
+    ],
+  },
+  {
     slug: 'apple-intelligence-foundation-server',
     title: 'Apple Intelligence Foundation Server',
     tagline: 'Local HTTP server that exposes Apple Intelligence on-device foundation models behind a simple API.',
