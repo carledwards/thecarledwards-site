@@ -132,6 +132,23 @@ const projects: Project[] = [
     ],
   },
   {
+    slug: 'merlin-c64',
+    title: 'Merlin on the Commodore 64',
+    tagline:
+      'A 6502 assembly TMS1100 interpreter that runs the original Merlin MP3404 ROM on a Commodore 64.',
+    blurb:
+      "A target-port of the Merlin emulator idea: instead of rewriting Merlin's six games for the C64, the 6502 program emulates the TMS1100 well enough for the original ROM to run. The port is tested in lockstep against the trusted Go core by assembling the C64 program, running it in a neutral 6502 emulator, and comparing every TMS1100 instruction boundary. The result is intentionally honest about the tradeoff: real engine, real ROM, slower than the original toy on stock C64 speed.",
+    status: 'Active',
+    year: '2026',
+    tags: ['6502', 'Commodore 64', 'TMS1100', 'Emulator', 'Assembly'],
+    hero: '/images/projects/merlin-c64/hero.gif',
+    links: [
+      { label: 'Source', href: 'https://github.com/carledwards/merlin-c64' },
+      { label: 'Writeup', href: '/blog/merlin-c64-emulator-approach/' },
+      { label: 'Browser version', href: 'https://carledwards.github.io/lets-go-merlin/' },
+    ],
+  },
+  {
     slug: 'u64shell',
     title: 'u64shell',
     tagline:
