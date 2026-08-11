@@ -8,38 +8,43 @@
    Theme palette. All `ink-*`/`accent` utilities resolve to these
    channel triplets, so toggling the `.light` class on <html> reskins
    the entire site (including Tailwind Typography, which points at the
-   same vars). Default = dark; `.light` = Solarized Light.
+   same vars). Both palettes follow the Chirpy theme: dark = neutral
+   warm-gray, light = white with cool grays; blue link accent in both.
    ───────────────────────────────────────────────────────────────────── */
+/* Default dark palette follows the Chirpy theme's dark mode: neutral
+   warm-gray surfaces (no blue tint) with a soft blue link accent. */
 :root {
   color-scheme: dark;
-  --ink-950: 10 12 16;
-  --ink-900: 13 17 23;
-  --ink-800: 22 27 34;
-  --ink-700: 33 38 45;
-  --ink-600: 48 54 61;
-  --ink-500: 115 124 135;
-  --ink-400: 139 148 158;
-  --ink-300: 177 186 196;
-  --ink-200: 201 209 217;
-  --ink-100: 230 237 243;
-  --accent: 126 231 135;
-  --accent-dim: 86 211 100;
+  --ink-950: 27 27 30;   /* page background   — Chirpy --main-bg          */
+  --ink-900: 30 30 30;   /* raised panels     — Chirpy card/sidebar bg    */
+  --ink-800: 41 41 41;   /* chip surface      — Chirpy card header bg     */
+  --ink-700: 51 52 55;   /* strong borders                                */
+  --ink-600: 63 65 68;   /* bullets / rules   — Chirpy dash/timeline      */
+  --ink-500: 113 113 115; /* faint labels      — Chirpy site-title         */
+  --ink-400: 134 134 134; /* muted / secondary — Chirpy text-muted         */
+  --ink-300: 167 167 167; /* lead              — Chirpy label              */
+  --ink-200: 175 176 177; /* body text         — Chirpy text-color         */
+  --ink-100: 204 204 204; /* headings / strong — Chirpy heading-color      */
+  --accent: 138 180 248;  /* links             — Chirpy link-color         */
+  --accent-dim: 116 178 243; /*                — Chirpy toc-highlight      */
 }
 
+/* Light palette follows the Chirpy theme's light mode: white page,
+   neutral cool grays, blue links. */
 :root.light {
   color-scheme: light;
-  --ink-950: 253 246 227; /* base3  #fdf6e3 — page background          */
-  --ink-900: 240 233 210; /*        #f0e9d2 — header / raised panels    */
-  --ink-800: 208 198 168; /*        #d0c6a8 — borders / chip surface    */
-  --ink-700: 188 177 144; /*        #bcb190 — strong borders / hr       */
-  --ink-600: 168 156 122; /*        #a89c7a — bullets / quote rule      */
-  --ink-500: 122 138 134; /*        #7a8a86 — faint labels              */
-  --ink-400: 95 117 113;  /*        #5f7571 — muted / secondary (~4.5:1) */
-  --ink-300: 88 108 113;  /*        #586c71 — lead (~5:1)               */
-  --ink-200: 73 92 97;    /*        #495c61 — body text (~7:1)          */
-  --ink-100: 7 54 66;     /* base02 #073642 — headings / strong         */
-  --accent: 31 128 56;    /*        #1f8038 — darkened for AA on cream   */
-  --accent-dim: 24 99 44; /*        #18632c                              */
+  --ink-950: 255 255 255; /* page background   — Chirpy --main-bg        */
+  --ink-900: 246 248 250; /* raised panels     — Chirpy sidebar bg       */
+  --ink-800: 233 236 239; /* borders / chip    — Chirpy btn-border       */
+  --ink-700: 222 226 230; /* strong borders/hr — Chirpy tag-border       */
+  --ink-600: 193 195 197; /* bullets / rules   — Chirpy mask-bg          */
+  --ink-500: 142 142 142; /* faint labels      — Chirpy sidebar-btn      */
+  --ink-400: 117 117 117; /* muted / secondary — Chirpy text-muted       */
+  --ink-300: 88 88 88;    /* lead              — Chirpy label-color      */
+  --ink-200: 52 52 60;    /* body text         — Chirpy text-color       */
+  --ink-100: 42 42 42;    /* headings / strong — Chirpy heading-color    */
+  --accent: 0 86 178;     /* links             — Chirpy link-color       */
+  --accent-dim: 5 80 174; /*                   — Chirpy toc-highlight    */
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -82,6 +87,11 @@
      *color* — gray 0 vs accent-green 1 — so this doesn't cost the
      at-a-glance read. */
   --ink-500: 201 209 217;
+  /* LEDs are green instruments regardless of the page accent (the site
+     accent is blue); many device styles also hardcode this green in
+     gradients/glows, so the token must match. */
+  --accent: 126 231 135;
+  --accent-dim: 86 211 100;
 }
 
 /* Ease the swap rather than hard-cut. Transform/opacity excluded so
@@ -151,7 +161,7 @@ body * {
 
   .grid-bg {
     background-image:
-      radial-gradient(circle at 1px 1px, rgba(126, 231, 135, 0.06) 1px, transparent 0);
+      radial-gradient(circle at 1px 1px, rgba(138, 180, 248, 0.06) 1px, transparent 0);
     background-size: 28px 28px;
   }
 
