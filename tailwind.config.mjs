@@ -31,6 +31,9 @@ export default {
           DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
           dim: 'rgb(var(--accent-dim) / <alpha-value>)',
         },
+        // Green "online / ready" indicator, deliberately separate from the
+        // blue link accent: green reads as state, blue as action.
+        status: 'rgb(var(--status) / <alpha-value>)',
       },
       // Prose vars point straight at the channels (no <alpha-value>
       // placeholder — these land verbatim in CSS custom properties), so

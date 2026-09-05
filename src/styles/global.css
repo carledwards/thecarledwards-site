@@ -27,6 +27,7 @@
   --ink-100: 204 204 204; /* headings / strong — Chirpy heading-color      */
   --accent: 138 180 248;  /* links             — Chirpy link-color         */
   --accent-dim: 116 178 243; /*                — Chirpy toc-highlight      */
+  --status: 52 211 153;   /* "online" indicator — emerald-400              */
 }
 
 /* Light palette follows the Chirpy theme's light mode: white page,
@@ -45,6 +46,7 @@
   --ink-100: 42 42 42;    /* headings / strong — Chirpy heading-color    */
   --accent: 0 86 178;     /* links             — Chirpy link-color       */
   --accent-dim: 5 80 174; /*                   — Chirpy toc-highlight    */
+  --status: 5 150 105;    /* "online" indicator — emerald-600            */
 }
 
 /* ─────────────────────────────────────────────────────────────────────

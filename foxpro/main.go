@@ -254,7 +254,14 @@ func openAboutCarl(a *foxpro.App) {
 	body := foxpro.NewTextProvider([]string{
 		"Carl Edwards",
 		"",
-		"CTO, architect, hands-on builder.",
+		"Product engineering leader and hands-on systems builder.",
+		"",
+		"STATUS: OPEN TO THE RIGHT NEXT BUILD",
+		"",
+		"I'm looking for a role where I can stay close to",
+		"users, shape what gets built, and remain hands-on.",
+		"",
+		"Type 'linkedin' to start a conversation.",
 		"",
 		"I write about engineering leadership, AI workflows,",
 		"and developer tools.",
@@ -262,9 +269,13 @@ func openAboutCarl(a *foxpro.App) {
 		"Most of what I'm tinkering with lives at",
 		"github.com/carledwards.",
 	})
+	// 16 lines of body. Widened from 56 to 64 so the role line, at 56
+	// characters, clears the inner text area, and H sized so the blank
+	// space below the last line matches the gap above the first.
+	// Centred on the 80-col screen; Y+H = 22 leaves the 25-row grid intact.
 	a.Manager.Add(foxpro.NewWindow(
 		"About Carl Edwards",
-		foxpro.Rect{X: 14, Y: 6, W: 56, H: 13},
+		foxpro.Rect{X: 8, Y: 3, W: 64, H: 18},
 		body,
 	))
 }

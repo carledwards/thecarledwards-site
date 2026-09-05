@@ -1,5 +1,6 @@
 ---
 import Header from '../components/Header.astro';
+import AvailabilityBanner from '../components/AvailabilityBanner.astro';
 import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 
@@ -12,7 +13,7 @@ interface Props {
 
 const {
   title,
-  description = 'Carl Edwards is a CTO, architect, and hands-on software builder writing about customer-centered systems, engineering leadership, AI workflows, and developer tools.',
+  description = 'Carl Edwards is a product engineering leader and hands-on systems builder writing about customer-centered systems, AI workflows, and developer tools.',
   image = '/images/avatar.jpg',
   article = false,
 } = Astro.props;
@@ -66,6 +67,7 @@ const fullTitle = title === 'Carl Edwards' ? title : `${title} — Carl Edwards`
   </head>
   <body>
     <Header />
+    <AvailabilityBanner />
     <main class="flex-1">
       <slot />
     </main>

@@ -15,9 +15,15 @@
   id="foxpro-toggle"
   type="button"
   aria-label="Toggle Retro FoxPro Mode"
-  class="fixed bottom-4 right-4 z-40 overflow-hidden rounded-md border border-ink-700 bg-ink-900/90 px-3 py-2 font-mono text-xs text-ink-200 shadow-lg backdrop-blur transition hover:border-accent hover:text-accent"
+  title="Retro FoxPro Mode"
+  class="fixed bottom-4 right-4 z-40 overflow-hidden rounded-md border border-ink-700 bg-ink-900/90 px-2.5 py-2 font-mono text-xs text-ink-200 shadow-lg backdrop-blur transition hover:border-accent hover:text-accent sm:px-3"
 >
-  <span class="relative z-10">▣ Retro FoxPro Mode</span>
+  {/* Label collapses to just the glyph on phones. At full width the button
+      is 163px — 42% of a 390px viewport, 51% of a 320px one — and it sits
+      over the hero copy and the "About me" button, swallowing taps meant
+      for them. The glyph alone is ~32px, the usual footprint for a corner
+      affordance. */}
+  <span class="relative z-10">▣<span class="hidden sm:inline"> Retro FoxPro Mode</span></span>
   <span class="foxpro-shimmer" aria-hidden="true"></span>
 </button>
 
@@ -26,7 +32,13 @@
      few seconds. Pulled to the side most of the cycle (translateX
      keyframes spend ~70% off-screen) so it reads as a periodic glint
      rather than a constant glow. Disabled for users who prefer
-     reduced motion. */
+     reduced motion.
+
+     The sweep colour has to flip with the theme. The button sits on
+     `bg-ink-900/90`, which is near-black in dark mode but near-WHITE in
+     light mode — so the original white sheen was invisible in light mode.
+     Light mode instead sweeps a soft dark band, which reads as the same
+     travelling glint against a pale surface. */
   @keyframes foxpro-sheen {
     0%, 70% {
       transform: translateX(-110%);
@@ -36,18 +48,24 @@
     }
   }
   #foxpro-toggle .foxpro-shimmer {
+    --sheen: 255 255 255;
+    --sheen-alpha: 0.22;
     position: absolute;
     inset: 0;
     width: 50%;
     background: linear-gradient(
       100deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.22) 50%,
+      rgb(var(--sheen) / var(--sheen-alpha)) 50%,
       transparent 100%
     );
     transform: translateX(-110%);
     animation: foxpro-sheen 4.5s ease-in-out infinite;
     pointer-events: none;
+  }
+  :root.light #foxpro-toggle .foxpro-shimmer {
+    --sheen: 0 0 0;
+    --sheen-alpha: 0.13;
   }
   @media (prefers-reduced-motion: reduce) {
     #foxpro-toggle .foxpro-shimmer {

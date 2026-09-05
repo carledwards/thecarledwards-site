@@ -1,0 +1,141 @@
+---
+// Site-wide availability strip. Sits in normal document flow directly
+// below the sticky header on every page (rendered once in BaseLayout) —
+// not a modal, toast, overlay, or dismissible bar. Styling reuses the
+// existing ink/accent tokens so it reskins with the light/dark toggle.
+//
+// The CTA ships with the About-page anchor as its href. The script below
+// upgrades it to a `mailto:` only after a real user gesture, so the address
+// never appears in the served HTML — see the comment there for why.
+const contactHref = '/about/#contact';
+---
+
+<aside
+  aria-label="Availability"
+  class="availability-banner border-b border-ink-800/80 bg-ink-900/70"
+>
+  <div
+    class="container-wide flex flex-col items-start gap-3 py-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-2.5"
+  >
+    <p
+      class="flex shrink-0 items-start gap-2.5 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-accent sm:text-[11px]"
+    >
+      <span class="status-light" aria-hidden="true"></span>
+      <span>STATUS: OPEN TO THE RIGHT NEXT BUILD</span>
+    </p>
+
+    <p class="min-w-0 flex-1 text-sm leading-snug text-ink-300">
+      I&rsquo;m looking for a role where I can stay close to users, shape what
+      gets built, and remain hands-on.
+    </p>
+
+    <a
+      id="availability-cta"
+      href={contactHref}
+      class="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-xs font-semibold text-accent hover:border-accent/70 hover:bg-accent/20 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 lg:self-auto"
+    >
+      Start a conversation
+      <span aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+</aside>
+
+<script>
+  // Email harvesting is overwhelmingly a regex run over fetched HTML — it
+  // never executes JS and never clicks. So the address is (a) absent from
+  // the markup, (b) stored ROT13'd in two halves, so nothing in the served
+  // output matches an address pattern, and (c) assembled only in response
+  // to a real user gesture. Astro inlines a script this small into each
+  // page, so the encoded halves do ship in the HTML — that's fine, since
+  // recovering them takes deliberately ROT13-decoding arbitrary strings,
+  // not pattern matching.
+  //
+  // Until that gesture the href stays the About-page anchor, which is also
+  // the graceful fallback when JS is unavailable.
+  const link = document.getElementById('availability-cta');
+
+  if (link) {
+    const rot13 = (s: string) =>
+      s.replace(/[a-z]/g, (c) =>
+        String.fromCharCode(((c.charCodeAt(0) - 97 + 13) % 26) + 97),
+      );
+
+    let upgraded = false;
+    const upgrade = () => {
+      if (upgraded) return;
+      upgraded = true;
+      const address =
+        rot13('rpney42') + String.fromCharCode(64) + rot13('tznvy.pbz');
+      link.setAttribute(
+        'href',
+        `mailto:${address}?subject=${encodeURIComponent(
+          'Next Build Opportunity',
+        )}`,
+      );
+    };
+
+    // `pointerenter` matters for honesty as much as function: without it a
+    // desktop visitor hovering the link sees the fallback URL in the browser
+    // status bar and reasonably concludes the button goes to the About page.
+    // `focus` covers keyboard use, and `pointerdown` fires before `click`
+    // (and before the context menu opens), so the href is correct by the
+    // time anything acts on it. None of these fire for a crawler.
+    for (const event of ['pointerenter', 'pointerdown', 'focus', 'keydown'] as const) {
+      link.addEventListener(event, upgrade, { once: true });
+    }
+  }
+</script>
+
+<style>
+  /* Small status light: a solid accent dot with a soft glow, plus a very
+     slow expanding ring. The ring is absolutely positioned and animates
+     transform/opacity only, so it can never shift layout or clip text. */
+  .status-light {
+    /* Green rather than the blue accent: this reads as "online / ready",
+       the way a service status light does. `--status` is a shared theme
+       token (src/styles/global.css) so this light and the dot beside the
+       wordmark in the header always match, in both themes. */
+    position: relative;
+    display: inline-block;
+    flex: none;
+    height: 7px;
+    width: 7px;
+    border-radius: 9999px;
+    background: rgb(var(--status));
+    box-shadow: 0 0 8px rgb(var(--status) / 0.85);
+    /* The status line is `items-start` so that when the label wraps (very
+       narrow viewports) the light stays on the first line rather than
+       drifting into the gap. `top` is a relative nudge — it re-centers the
+       dot on that line optically without touching layout. */
+    top: 0.3em;
+  }
+
+  .status-light::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    border: 1px solid rgb(var(--status) / 0.55);
+    animation: status-light-pulse 3s ease-out infinite;
+  }
+
+  @keyframes status-light-pulse {
+    0% {
+      transform: scale(0.7);
+      opacity: 0.65;
+    }
+    70%,
+    100% {
+      transform: scale(1.7);
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-light::after {
+      animation: none;
+      transform: none;
+      opacity: 0.3;
+    }
+  }
+</style>
