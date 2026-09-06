@@ -18,7 +18,14 @@ const { post } = Astro.props;
 const { Content } = await post.render();
 
 const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    // See index.astro — frontmatter dates are UTC midnight; format as UTC
+    // so they don't render a day early.
+    timeZone: 'UTC',
+  });
 ---
 
 <BaseLayout

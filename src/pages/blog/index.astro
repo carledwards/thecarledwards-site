@@ -6,7 +6,14 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    // See index.astro — frontmatter dates are UTC midnight; format as UTC
+    // so they don't render a day early.
+    timeZone: 'UTC',
+  });
 
 const groupedByYear = posts.reduce<Record<string, typeof posts>>((acc, p) => {
   const y = p.data.date.getFullYear().toString();

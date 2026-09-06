@@ -22,10 +22,17 @@ const focus = [
   },
 ];
 
-// Two-card teaser for the homepage. Full project list lives at
+// Three-card teaser for the homepage. Full project list lives at
 // /projects/ — keep this slice short and current; let the projects
 // page be the source of truth for everything else.
 const work = [
+  {
+    title: 'Apple Foundation Models Workbench',
+    blurb:
+      "Evaluation workbench for Apple's OS 27 on-device and Private Cloud Compute models — runs a prompt repeatedly and scores how often the answer agrees with itself.",
+    href: '/projects/#apple-intelligence-foundation-server',
+    meta: 'AI tooling · 2026',
+  },
   {
     title: '6502 Simulator',
     blurb: 'A 6502 microcomputer with a VIC video chip and a real 6522 VIA timer — runs in your terminal and in your browser, same code.',
@@ -56,7 +63,15 @@ const profile = [
 ];
 
 const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    // Dates in frontmatter are bare `YYYY-MM-DD`, which parses as UTC
+    // midnight. Formatting in the build machine's local zone would render
+    // the previous day for anywhere west of Greenwich.
+    timeZone: 'UTC',
+  });
 ---
 
 <BaseLayout
@@ -225,7 +240,7 @@ const fmt = (d: Date) =>
       </div>
       <a href="/projects/" class="text-sm text-ink-400 hover:text-accent">all projects →</a>
     </div>
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {work.map((w) => (
         <a href={w.href} class="group block rounded-lg border border-ink-800 bg-ink-900 p-6 hover:border-ink-600 hover:bg-ink-800/60">
           <div class="font-mono text-xs uppercase tracking-wider text-ink-400">{w.meta}</div>
