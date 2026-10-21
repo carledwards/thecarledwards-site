@@ -1,5 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const focus = [
+  {
+    label: 'Customer-Centered Engineering',
+    body: 'Starting from the user experience, then choosing the right technology, process, and implementation to make the complexity disappear.',
+  },
+  {
+    label: 'Technical Architecture',
+    body: 'Designing durable systems, internal platforms, and data flows with a bias toward simple operations and choices that age well.',
+  },
+  {
+    label: 'AI-Native Delivery',
+    body: 'Bringing LLMs into planning, development, and operations through practical tooling, measured workflows, and working code.',
+  },
+];
+
+
 ---
 
 <BaseLayout title="About" description="About Carl Edwards, a customer-centered product engineering leader and hands-on systems builder.">
@@ -39,6 +56,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         habit still drives how I pick up new technology: bridge the gaps, choose the
         right tool for the problem, and keep refining until the experience feels obvious.
       </p>
+
+      <h2>How I work</h2>
+      <p>
+        Customer experience first. Technology in service of the problem.
+        I tend to sit where customer needs, architecture, and team execution meet:
+        translating feedback into systems, bridging technology gaps, and helping
+        teams ship solutions users do not have to think about.
+      </p>
+      {focus.map((item) => (
+        <div>
+          <h3>{item.label}</h3>
+          <p>{item.body}</p>
+        </div>
+      ))}
 
       <h2>What I write about</h2>
       <ul>

@@ -1,5 +1,6 @@
 ---
 title: "From a Single Bit to a Real CPU: The Learn Series"
+kind: "Learning"
 date: 2026-05-19
 description: "Why I built a hands-on series that takes you from one bit up to a working 8-bit CPU running real code in the browser — and why it's built AI-forward."
 tags: ["Learn", "6502", "Binary", "AI", "Teaching"]

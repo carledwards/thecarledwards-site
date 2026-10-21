@@ -1,5 +1,6 @@
 ---
 title: "Claude64 Ultimate"
+kind: "Project"
 date: 2026-05-31
 description: "Using Claude, MCP, u64ctl, and a Commodore 64 Ultimate to assemble 6502 code, inspect ROM routines, upload programs, and control a real-feeling C64 from modern tools."
 tags: ["Commodore64", "Ultimate64", "Claude", "AI", "MCP", "6502", "RetroComputing", "Go", "WebAssembly"]

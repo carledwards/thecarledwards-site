@@ -1,5 +1,6 @@
 ---
 title: "Finding the Right Place for Apple's OS 27 Foundation Models"
+kind: "Project update"
 date: 2026-09-05
 description: "OS 27 brings substantially more capable models to the device, with Private Cloud Compute available when a feature needs more. I built a workbench to understand where each model fits—and what that changes about application architecture."
 tags: ["Apple Foundation Models", "On-device AI", "Private Cloud Compute", "Architecture", "Evaluation", "iOS"]

@@ -59,3 +59,15 @@ Old Hugo URLs (`/posts/<slug>/`, `/index.xml`) redirect to the new paths via
 
 - Source code: [MIT](./LICENSE)
 - Written content (posts, training, media): see [COPYRIGHT.md](./COPYRIGHT.md)
+
+## Homepage updates
+
+The homepage shows the seven newest published blog posts and standalone updates,
+sorted by date. Blog posts default to the `Writing` label; set `kind` in their
+frontmatter to `Project`, `Project update`, or `Learning` when appropriate.
+
+For an announcement that links directly to a project or lesson, copy
+`src/content/updates/example.json` to a descriptive filename. Set its title, date
+(`YYYY-MM-DD`), description, kind, and href, then set `draft` to `false`. Keep the
+example as a draft. Published updates also appear in RSS. Use one entry per
+announcement to avoid duplicating a blog post in the stream.

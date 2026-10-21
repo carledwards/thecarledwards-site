@@ -1,5 +1,6 @@
 ---
 title: "Merlin, the CPU, and the Commodore 64"
+kind: "Project update"
 date: 2026-06-13
 description: "Running Merlin on a C64 by making the CPU work: emulate the TMS1100, validate it against the Go core, and let the original game engine run."
 tags: ["Merlin", "Commodore64", "Emulation", "TMS1100", "6502", "Go"]

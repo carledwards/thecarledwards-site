@@ -1,5 +1,6 @@
 ---
 title: "From a Small Diversion to Asciimator"
+kind: "Project"
 date: 2026-02-17
 description: "A small internal utility that grew into Asciimator, built with AI assistance and grounded in my retro DOS framework work."
 tags: ["Asciimator", "AI", "ASCII", "RetroDOS", "DeveloperTools"]
