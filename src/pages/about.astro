@@ -1,25 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const focus = [
-  {
-    label: 'Customer-Centered Engineering',
-    body: 'Starting from the user experience, then choosing the right technology, process, and implementation to make the complexity disappear.',
-  },
-  {
-    label: 'Technical Architecture',
-    body: 'Designing durable systems, internal platforms, and data flows with a bias toward simple operations and choices that age well.',
-  },
-  {
-    label: 'AI-Native Delivery',
-    body: 'Bringing LLMs into planning, development, and operations through practical tooling, measured workflows, and working code.',
-  },
-];
-
-
 ---
 
-<BaseLayout title="About" description="About Carl Edwards, a customer-centered product engineering leader and hands-on systems builder.">
+<BaseLayout title="About" description="Carl Edwards is a product engineering leader whose career spans Pandora, ServiceChannel, Human Interest, and Zero. He builds teams, ships products, and stays close to customers and code.">
   <section class="container-prose pt-12 pb-20">
     <div class="text-mono-tag mb-4">About</div>
     <h1 class="text-4xl sm:text-5xl font-semibold text-ink-100 tracking-tight">
@@ -27,64 +10,87 @@ const focus = [
     </h1>
 
     <div class="prose prose-invert prose-lg mt-10 max-w-none">
-      <p>
-        I've been writing software since the early 1980s, starting on a Commodore 64
-        with BASIC and 6502 assembly before helping design the
-        <a href="https://github.com/carledwards/lcm-32">LCM-32</a>, an affordable
-        single-board computer, in 1986. That early work left a mark: I still care about
-        systems that are understandable, economical, and useful to the people operating
-        them.
+      <p class="lead">
+        I build engineering teams and help them turn complicated problems into
+        products people can rely on. My career has taken me from debugging database
+        software to engineering leadership at Pandora, ServiceChannel, Human Interest,
+        and Zero. Throughout it, I've stayed close to the customers, the people doing
+        the work, and the code.
       </p>
 
+      <h2>From building software to building teams</h2>
       <p>
-        These days I work as a product engineering leader and hands-on systems
-        builder. I care about teams that can make clear technical decisions, keep
-        product momentum, and operate what they build. Most of my recent attention is on
-        <strong>AI-native developer tooling</strong>: not demos, but tools and workflows
-        that change how engineers plan, build, review, and run software every day.
+        Early in my career at Sybase, supporting database client products taught me
+        to follow a problem wherever it led. A customer's experience could depend on
+        several systems, platforms, and teams. Understanding those connections—and
+        taking responsibility for the outcome—became the foundation of how I work.
+      </p>
+      <p>
+        I spent thirteen years at Pandora, progressing from senior software engineer
+        through device engineering management and into a VP of Engineering role.
+        The work brought together connected devices, automotive, mobile, advertising,
+        and partners. As my responsibilities grew, so did the importance of helping
+        people make decisions together: understanding competing needs, making
+        tradeoffs clear, and giving teams a direction they could act on.
+      </p>
+      <p>
+        At ServiceChannel, I built a West Coast engineering and program-management
+        organization and brought mobile development in-house. At Human Interest,
+        leading engineering in financial services deepened my appreciation for
+        correctness, reliability, and the operational work behind the customer
+        experience.
+      </p>
+      <p>
+        Most recently, as VP of Engineering at Zero, I set technical direction and
+        wrote production code alongside a small team. Our work included AI-powered
+        nutrition analysis and guidance, improvements to the mobile and backend
+        experience, and making production quality more visible so engineers could
+        act on it.
       </p>
 
+      <h2>What I bring to a team</h2>
       <p>
-        My bias has always been customer-centered. The implementation matters, but it
-        comes after the experience: what the user is trying to do, where the friction is,
-        and what complexity we can absorb so they do not have to.
+        I'm useful where customer needs, technical complexity, and organizational
+        constraints meet. I listen, connect the pieces, and help turn an unclear
+        situation into a next step. Sometimes that means coaching a manager or
+        resolving a disagreement. Sometimes it means making an architectural
+        decision, coordinating an incident, or writing the code.
+      </p>
+      <p>
+        Hands-on leadership means staying close enough to contribute without
+        becoming the bottleneck. I want people to develop ownership, receive clear
+        feedback, and know that they can raise a concern or admit uncertainty.
+        High standards and respect for people belong together.
+      </p>
+      <p>
+        I also care about what happens after we ship. Do customers understand the
+        change? Does it help them? What do usage, reliability, and feedback tell us?
+        Those questions guide what we build next and where we invest the team's time.
       </p>
 
+      <h2>Still curious. Still building.</h2>
       <p>
-        I did not take the traditional college path. I learned hands-on by building,
-        listening, collaborating, and iterating with the people using the systems. That
-        habit still drives how I pick up new technology: bridge the gaps, choose the
-        right tool for the problem, and keep refining until the experience feels obvious.
+        I learned by building and debugging, starting with BASIC and 6502 assembly.
+        That curiosity is still with me. Today I'm exploring practical AI tools and
+        workflows, building developer tools, and creating interactive lessons that
+        make computing easier to understand. You can explore my
+        <a href="/projects/">projects</a>, try the <a href="/learn/">lessons</a>, or
+        read my <a href="/blog/">notes on building and leading</a>.
+      </p>
+      <p>
+        One principle has stayed with me since those early Sybase days:
+        <a href="/blog/leave-the-product-better-than-you-found-it/">leave the product
+        better than you found it</a>. It applies to the software and to the team
+        doing the work.
       </p>
 
-      <h2>How I work</h2>
+      <h2 id="contact">Let's talk</h2>
       <p>
-        Customer experience first. Technology in service of the problem.
-        I tend to sit where customer needs, architecture, and team execution meet:
-        translating feedback into systems, bridging technology gaps, and helping
-        teams ship solutions users do not have to think about.
-      </p>
-      {focus.map((item) => (
-        <div>
-          <h3>{item.label}</h3>
-          <p>{item.body}</p>
-        </div>
-      ))}
-
-      <h2>What I write about</h2>
-      <ul>
-        <li>Engineering leadership and team design</li>
-        <li>Customer-centered product engineering</li>
-        <li>System architecture, especially the choices that age well</li>
-        <li>Practical AI tooling: Claude Code, agentic workflows, observability</li>
-        <li>Hardware side projects, retro computing, and the occasional weekend diversion</li>
-      </ul>
-
-      <h2 id="contact">Get in touch</h2>
-      <p>
-        The quickest way to reach me is the <strong>Start a conversation</strong>
-        button at the top of any page &mdash; it opens an email. I read everything
-        that isn&rsquo;t a cold pitch, and I reply.
+        I'm looking for a role where I can stay close to users, shape what gets
+        built, and help a team do work it is proud of. If that sounds like what
+        you're building, I'd enjoy a conversation. Reach me on
+        <a href="https://linkedin.com/in/the-carl-edwards">LinkedIn</a> or use the
+        <strong>Start a conversation</strong> button at the top of the page.
       </p>
 
       <h2 id="elsewhere">Elsewhere</h2>

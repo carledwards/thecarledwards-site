@@ -37,6 +37,7 @@ const isActive = (href: string) =>
       {links.map((l) => (
         <a
           href={l.href}
+          aria-current={isActive(l.href) ? (pathname === l.href ? 'page' : 'location') : undefined}
           class:list={[
             'px-2.5 py-1.5 rounded-md text-sm font-medium sm:px-3',
             isActive(l.href)

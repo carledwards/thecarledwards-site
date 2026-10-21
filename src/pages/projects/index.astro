@@ -290,7 +290,7 @@ const statusColor = (s: Project['status']) =>
   title="Projects"
   description="Software projects by Carl Edwards — a 6502 microcomputer simulator, an ASCII animation editor, a retro TUI framework, and more."
 >
-  <section class="container-wide pt-12 pb-20">
+  <section id="project-index" class="container-wide pt-12 pb-12 scroll-mt-28">
     <div class="text-mono-tag mb-4">Projects</div>
     <h1 class="text-4xl sm:text-5xl font-semibold text-ink-100 tracking-tight">
       Things I'm building.
@@ -300,6 +300,10 @@ const statusColor = (s: Project['status']) =>
       ambient AI workflows. Most are open source. The ones with live demos
       let you poke at them in your browser.
     </p>
+    <nav aria-label="Project index" class="mt-6 flex flex-wrap gap-2">
+      {projects.map((p) => <a href={`#${p.slug}`} class="rounded-md border border-ink-700 px-3 py-2 text-sm text-ink-300 hover:border-accent hover:text-accent">{p.title}</a>)}
+      <a href="#tinkering" class="rounded-md border border-ink-700 px-3 py-2 text-sm text-ink-300 hover:border-accent hover:text-accent">Hardware and tinkering</a>
+    </nav>
   </section>
 
   <section class="container-wide pb-24 space-y-12">
@@ -307,6 +311,7 @@ const statusColor = (s: Project['status']) =>
       /* `scroll-mt` clears the sticky header when linked to by anchor. */
       <article id={p.slug} class="scroll-mt-24 rounded-lg border border-ink-800 bg-ink-900 overflow-hidden">
         <div class="p-6 sm:p-8 space-y-4">
+          <a href="#project-index" class="inline-block text-sm text-ink-400 hover:text-accent">← Project index</a>
           <div class="flex flex-wrap items-center gap-3">
             <span class:list={[
               'inline-block rounded border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider',
@@ -387,7 +392,7 @@ const statusColor = (s: Project['status']) =>
     ))}
   </section>
 
-  <section class="container-wide pb-24">
+  <section id="tinkering" class="container-wide pb-24 scroll-mt-28">
     <div class="text-mono-tag mb-4">Tinkering</div>
     <h2 class="text-3xl sm:text-4xl font-semibold text-ink-100 tracking-tight">
       Smaller things I've built.

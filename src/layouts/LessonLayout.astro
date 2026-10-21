@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import LessonNavigation from '../components/LessonNavigation.astro';
 
 interface NavLink {
   slug: string;
@@ -32,7 +33,18 @@ const {
 ---
 
 <BaseLayout title={title} description={summary} article={true}>
-  <article class="mx-auto w-full max-w-5xl px-6 pt-10 pb-16 sm:pt-12 sm:pb-20">
+  <div class="lesson-shell mx-auto w-full max-w-[1440px] px-6 py-8 sm:py-12">
+    <LessonNavigation series={series} title={`${seriesTitle} · ${title}`} />
+    <article class="min-w-0 w-full max-w-5xl mx-auto pb-8">
+    <nav aria-label="Breadcrumb" class="mb-5 text-sm text-ink-400">
+      <ol class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <li><a class="hover:text-accent" href="/learn/">Learn</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a class="hover:text-accent" href={`/learn/#${series}`}>{seriesTitle}</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-ink-200">{title}</li>
+      </ol>
+    </nav>
     <a href="/learn/" class="text-mono-tag hover:text-accent inline-flex items-center gap-2">
       <span aria-hidden="true">←</span> all lessons
     </a>
@@ -104,7 +116,16 @@ const {
       )}
     </footer>
   </article>
+  </div>
 </BaseLayout>
+
+<style>
+  .lesson-shell { display: grid; gap: 2rem; align-items: start; }
+  @media (min-width: 1024px) {
+    .lesson-shell { grid-template-columns: 16rem minmax(0, 1fr); }
+    .lesson-shell:has([data-lesson-navigation]:not([open])) { grid-template-columns: 7rem minmax(0, 1fr); }
+  }
+</style>
 
 <style is:global>
   /* Constrain narrative content to a readable line length, but let

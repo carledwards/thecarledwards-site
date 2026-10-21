@@ -1,0 +1,67 @@
+---
+import { getCollection } from 'astro:content';
+const { series, title } = Astro.props;
+const lessons = (await getCollection('lessons', ({ data }) => !data.draft))
+  .sort((a, b) => a.data.order - b.data.order);
+const order = ['binary', 'computer', '6502', 'building'];
+const groups = [...new Set(lessons.map((l) => l.data.series))].sort((a, b) =>
+  (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b)) || a.localeCompare(b));
+const current = Astro.url.pathname.replace(/\/$/, '');
+---
+<aside class="lesson-navigation">
+  <details data-lesson-navigation open class="rounded-lg border border-ink-800 bg-ink-900">
+    <summary class="cursor-pointer p-4 text-sm font-semibold text-ink-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent">
+      Lessons
+      <span class="block mt-1 font-normal text-xs text-ink-400 lg:hidden">{title}</span>
+    </summary>
+    <nav aria-label="Lesson navigation" class="lesson-navigation-list border-t border-ink-800 p-3">
+      <a href="/learn/" class="block px-2 py-2 text-sm text-accent hover:underline">All learning series →</a>
+      {groups.map((key) => {
+        const items = lessons.filter((l) => l.data.series === key);
+        return <details open={key === series} class="mt-2">
+          <summary class="cursor-pointer rounded px-2 py-3 text-sm font-medium text-ink-200">{items[0].data.seriesTitle}</summary>
+          <ol class="space-y-1 pb-2">
+            {items.map((lesson) => {
+              const active = current === `/learn/${lesson.slug}`;
+              return <li><a href={`/learn/${lesson.slug}/`} aria-current={active ? 'page' : undefined}
+                class:list={['block rounded border-l-2 px-3 py-2 text-sm leading-relaxed', active ? 'border-accent bg-ink-800 text-accent font-medium' : 'border-transparent text-ink-300 hover:bg-ink-800 hover:text-ink-100']}>
+                <span class="font-mono text-xs mr-2">{String(lesson.data.order).padStart(2, '0')}</span>{lesson.data.title}
+              </a></li>;
+            })}
+          </ol>
+          {key === '6502' && <div class="border-t border-ink-800 px-2 py-2 text-xs space-y-2">
+            <a class="block text-ink-300 hover:text-accent" href="/learn/6502/syntax/">Assembly syntax</a>
+            <a class="block text-ink-300 hover:text-accent" href="/learn/6502/machine/">More about the 6502</a>
+            <a class="block text-ink-300 hover:text-accent" href="/learn/6502/built/">How CodeLab is built</a>
+          </div>}
+        </details>;
+      })}
+    </nav>
+  </details>
+</aside>
+<script is:inline>
+  (() => {
+    const menu = document.querySelector('[data-lesson-navigation]');
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    function apply() {
+      let closed = false;
+      try { closed = localStorage.getItem('lesson-navigation:closed') === '1'; } catch {}
+      menu.open = desktop.matches && !closed;
+    }
+    apply();
+    desktop.addEventListener('change', apply);
+    menu.querySelector('summary').addEventListener('click', () => {
+      if (desktop.matches) {
+        try { localStorage.setItem('lesson-navigation:closed', menu.open ? '1' : '0'); } catch {}
+      }
+    });
+  })();
+</script>
+<style>
+  .lesson-navigation { min-width: 0; }
+  .lesson-navigation-list { max-height: 60vh; overflow-y: auto; }
+  @media (min-width: 1024px) {
+    .lesson-navigation { position: sticky; top: 5rem; align-self: start; }
+    .lesson-navigation-list { max-height: calc(100vh - 10rem); }
+  }
+</style>

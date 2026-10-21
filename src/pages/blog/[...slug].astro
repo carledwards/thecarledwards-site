@@ -15,7 +15,14 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render();
+const sections = headings.filter((h) => h.depth === 2);
+const related = (await getCollection('blog', ({ data }) => !data.draft))
+  .filter((p) => p.slug !== post.slug)
+  .map((p) => ({ post: p, score: p.data.tags.filter((t) => post.data.tags.includes(t)).length }))
+  .filter((p) => p.score > 0)
+  .sort((a, b) => b.score - a.score || b.post.data.date.valueOf() - a.post.data.date.valueOf())
+  .slice(0, 3);
 
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', {
@@ -38,6 +45,11 @@ const fmt = (d: Date) =>
       <span aria-hidden="true">←</span> all writing
     </a>
 
+    <nav aria-label="Breadcrumb" class="mt-5 text-sm text-ink-400">
+      <a href="/blog/" class="hover:text-accent">Writing</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span aria-current="page" class="text-ink-200">{post.data.title}</span>
+    </nav>
     <header class="mt-8 pb-8 border-b border-ink-800">
       <h1 class="text-3xl sm:text-5xl font-semibold text-ink-100 tracking-tight leading-[1.1]">
         {post.data.title}
@@ -64,10 +76,26 @@ const fmt = (d: Date) =>
       )}
     </header>
 
-    <div class="prose prose-invert prose-lg mt-10 max-w-none prose-pre:rounded-lg prose-pre:border prose-pre:border-ink-800 prose-img:rounded-lg prose-img:border prose-img:border-ink-800 prose-a:underline-offset-4 prose-a:decoration-accent/40 hover:prose-a:decoration-accent">
+    {sections.length >= 4 && (
+      <details class="mt-8 rounded-lg border border-ink-800 p-4">
+        <summary class="cursor-pointer text-sm font-medium text-ink-200">On this page</summary>
+        <nav aria-label="Article contents" class="mt-3">
+          <ul class="space-y-2 text-sm text-ink-300">
+            {sections.map((h) => <li><a class="hover:text-accent" href={`#${h.slug}`}>{h.text}</a></li>)}
+          </ul>
+        </nav>
+      </details>
+    )}
+    <div class="prose-headings:scroll-mt-28 prose prose-invert prose-lg mt-10 max-w-none prose-pre:rounded-lg prose-pre:border prose-pre:border-ink-800 prose-img:rounded-lg prose-img:border prose-img:border-ink-800 prose-a:underline-offset-4 prose-a:decoration-accent/40 hover:prose-a:decoration-accent">
       <Content />
     </div>
 
+    {related.length > 0 && <nav aria-label="Related writing" class="mt-12 border-t border-ink-800 pt-6">
+      <h2 class="text-lg font-semibold text-ink-100">Related writing</h2>
+      <ul class="mt-4 space-y-3">
+        {related.map(({ post: p }) => <li><a class="text-ink-300 hover:text-accent" href={`/blog/${p.slug}/`}>{p.data.title} →</a></li>)}
+      </ul>
+    </nav>}
     <footer class="mt-16 pt-8 border-t border-ink-800 flex flex-wrap items-center justify-between gap-4 text-sm">
       <a href="/blog/" class="text-ink-400 hover:text-accent">← more writing</a>
       <a href="https://linkedin.com/in/the-carl-edwards" class="text-ink-400 hover:text-accent">connect on LinkedIn →</a>
