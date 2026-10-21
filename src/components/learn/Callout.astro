@@ -67,4 +67,28 @@ const { title, variant = 'note' } = Astro.props;
   .callout .callout-body strong {
     color: theme('colors.ink.100');
   }
+
+  :global(html.light) .callout {
+    background: theme('colors.ink.900');
+  }
+  :global(html.light) .callout[data-variant='note'] {
+    background: theme('colors.sky.50');
+    border-left-color: theme('colors.sky.700');
+  }
+  :global(html.light) .callout[data-variant='note'] .callout-title {
+    color: theme('colors.sky.800');
+  }
+  :global(html.light) .callout[data-variant='why'] {
+    background: theme('colors.amber.50');
+    border-left-color: theme('colors.amber.700');
+  }
+  :global(html.light) .callout[data-variant='why'] .callout-title {
+    color: theme('colors.amber.800');
+  }
+  :global(html.light) .callout[data-variant='aside'] .callout-title {
+    color: theme('colors.ink.300');
+  }
+  :global(html.light) .callout .callout-body code {
+    background: rgba(0, 0, 0, 0.05);
+  }
 </style>
